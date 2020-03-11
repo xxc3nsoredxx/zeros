@@ -1,7 +1,10 @@
 /bin
+/iso/*
+/obj/*
 
 *.o
 *.exe
+*.iso
 
 *.swp
 *.swo

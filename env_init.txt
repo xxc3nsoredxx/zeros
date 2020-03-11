@@ -1,0 +1,6 @@
+Running QEMU:
+    Emulator:
+        qemu-system-i386
+    Display:
+    Multiboot options:
+        -kernel [kernel bzImage]
