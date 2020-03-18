@@ -15,6 +15,10 @@ kmain:
     push    msg2
     call    puts
 
+    push    DWORD [msg3len]
+    push    msg3
+    call    puts
+
     jmp $
 
 section .data
@@ -28,7 +32,12 @@ msg2:
     times 3 db  'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 0x0A, 0x0D
     times 5 db  0x0A, 0x0D
     db  'HHHHHHH', 0x0A, 'IIIIIIIIIIIII'
-    times 10 db 0x0A, 0x0D
+    times 10    db 0x0A, 0x0D
     times 5 db  'NNNNNNNNNNNNNNNNNNNNNNNNN', 0x0A, 0x0D
 msg2len:
     dd  $ - msg2
+msg3:
+    times 15    db '0123456789'
+    db  0x0A, 0x0D
+msg3len:
+    dd  $ - msg3

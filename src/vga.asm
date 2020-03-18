@@ -101,7 +101,8 @@ puts:
     push    esi
 
     mov ecx, [ebp + 12] ; Length of the string
-    jecxz   .done       ; Skip all if zero length
+    cmp ecx, 0
+    jz  .done       ; Skip all if zero length
     mov esi, [ebp + 8]  ; Address of the first character
     call    getpos      ; Get the current pos
     mov edi, eax
@@ -116,6 +117,22 @@ puts:
     mov BYTE [edi], bl  ; Color
     inc edi
     add BYTE [curx], 1
+    movzx   eax, BYTE [curx]    ; Test for word wrap
+    cmp al, BYTE [COLS]
+    jne .nowrap
+    add BYTE [cury], 1
+    mov BYTE [curx], 0
+    movzx   eax, BYTE [cury]
+    cmp al, BYTE [ROWS]
+    jne .nowrap
+    push    eax
+    push    ecx
+    call    scroll
+    pop ecx
+    pop eax
+    call    getpos
+    mov edi, eax
+.nowrap:
     loop    .print
     jmp .done
 .lf:
@@ -139,7 +156,7 @@ puts:
     call    getpos
     mov edi, eax
     inc esi
-    loop    .print
+    loop    .print_jmp
 .done:
     pop esi
     pop edi
@@ -147,6 +164,8 @@ puts:
     mov esp, ebp
     pop ebp
     ret 8
+.print_jmp:
+    jmp .print
 
 section .data
 curx:                   ; Current cursor x
