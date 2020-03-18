@@ -116,40 +116,46 @@ puts:
     movsb               ; Regular char
     mov BYTE [edi], bl  ; Color
     inc edi
-    add BYTE [curx], 1
-    movzx   eax, BYTE [curx]    ; Test for word wrap
-    cmp al, BYTE [COLS]
+    movzx   eax, BYTE [curx]
+    inc eax
+    cmp al, BYTE [COLS] ; Test for word wrap
     jne .nowrap
-    add BYTE [cury], 1
     mov BYTE [curx], 0
     movzx   eax, BYTE [cury]
-    cmp al, BYTE [ROWS]
-    jne .nowrap
-    push    eax
+    inc eax
+    cmp al, BYTE [ROWS] ; Test for wrap scroll
+    jne .nowrapscroll
     push    ecx
     call    scroll
     pop ecx
-    pop eax
     call    getpos
     mov edi, eax
+    loop    .print
+    jmp .done
 .nowrap:
+    mov [curx], al
+    loop    .print
+    jmp .done
+.nowrapscroll:
+    mov [cury], al
     loop    .print
     jmp .done
 .lf:
-    add BYTE [cury], 1  ; Go down a line
-    mov al, [cury]
+    movzx   eax, BYTE [cury]    ; Go down a line
+    inc eax
     cmp al, [ROWS]
     jne .noscroll
-    push    eax
     push    ecx
     call    scroll
     pop ecx
-    pop eax
+    jmp .skip
 .noscroll:
+    mov [cury], al
+.skip:
     call    getpos
     mov edi, eax
     inc esi
-    loop    .print
+    loop    .print_jmp
     jmp .done
 .cr:
     mov BYTE [curx], 0  ; Go to start of line

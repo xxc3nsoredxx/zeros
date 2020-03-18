@@ -37,7 +37,7 @@ msg2:
 msg2len:
     dd  $ - msg2
 msg3:
-    times 15    db '0123456789'
-    db  0x0A, 0x0D
+    times 400   db '0123456789'
+    db  'Test'
 msg3len:
     dd  $ - msg3
