@@ -1,6 +1,6 @@
     ; Kernel 0
     ; Multiboot header is defined at the bottom of this file
-    bits 32
+    bits    32
 
 section .text
     global  kstart  ; Make kstart visible
@@ -13,7 +13,7 @@ kstart:
     call    kmain   ; Kernel main function
     hlt             ; Halt the CPU after leaving kernel
 
-section .stack nobits align=4
+section .stack nobits alloc noexec write align=16
 stack_bot:
     resb    8 * 1024 * 1024 ; 8MiB stack
 stack:              ; Stack pointer at highest address

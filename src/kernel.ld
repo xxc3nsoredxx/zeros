@@ -23,7 +23,12 @@ SECTIONS
     {
         /* Have the kernel initialization code first */
         *kernel0.o (.text)
-        *kernel1.o (.text)
+        * (.text)
+    }
+    /* Readonly data */
+    .rodata :
+    {
+        * (.rodata)
     }
     /* Initialized data */
     .data :
@@ -38,10 +43,10 @@ SECTIONS
         * (.bss)
     }
     /* Stack at the very end */
-    .stack :
+    .stack ALIGN(16) :
     {
         *kernel0.o (.stack)
-        /* End of .bdd and stack */
+        /* End of .bss and stack */
         _mb_bss_end_addr = ABSOLUTE(.);
     }
 }
