@@ -1,7 +1,6 @@
     ; VGA/Screen related functions and constants
     bits    32
 
-%define VGA_DEFS
 %include    "vga.hs"
 
 section .text

@@ -13,7 +13,7 @@ all: $(BIN)/kernel.bin
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) -T $(SRC)/kernel.ld $^ -o $@ -M
 
-$(OBJ)/kernel0.o: $(SRC)/kernel0.asm
+$(OBJ)/kernel0.o: $(SRC)/kernel0.asm $(INC)/gdt.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/kernel1.o: $(SRC)/kernel1.asm $(INC)/vga.hs

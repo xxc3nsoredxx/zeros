@@ -4,7 +4,7 @@
 %include    "vga.hs"
 
 section .text
-    global  kmain   ; Make kmain visible
+    global  kmain       ; Make kmain visible
 
 kmain:
     push    DWORD [msglen]

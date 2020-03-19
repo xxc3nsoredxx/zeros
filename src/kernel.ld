@@ -25,6 +25,11 @@ SECTIONS
         *kernel0.o (.text)
         * (.text)
     }
+    /* Load GDT after the code */
+    .gdt ALIGN(4) :
+    {
+        *kernel0.o (.gdt)
+    }
     /* Readonly data */
     .rodata :
     {

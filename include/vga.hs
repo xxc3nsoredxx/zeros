@@ -3,5 +3,4 @@
 
 extern  puts
 
-%undef  output
 %endif
