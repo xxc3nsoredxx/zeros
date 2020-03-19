@@ -4,3 +4,5 @@
 extern  puts
 
 %endif
+
+; vim: set filetype=nasm:

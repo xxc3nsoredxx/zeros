@@ -44,3 +44,5 @@ endstruc
 %assign MB_PIXEL_DEPTH  0   ; Pixel depth
 
 %endif
+
+; vim: set filetype=nasm:

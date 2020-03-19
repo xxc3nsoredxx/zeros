@@ -33,9 +33,9 @@ stack:                  ; Stack pointer at highest address
 
 section .gdt progbits alloc noexec nowrite align=4
 gdt:                    ; The start of the GDT
-.gdt_null:              ; Null selector
+.gdt_null:              ; Null selector (GDT offset = 0x00)
     dq  0               ; All zeros
-.gdt_code:              ; Code selector
+.gdt_code:              ; Code selector (GDT offset = 0x08)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot, dw GDT_LIM_BOT
         at gdt_entry_t.base_bot, dw GDT_BASE_BOT
@@ -44,7 +44,7 @@ gdt:                    ; The start of the GDT
         at gdt_entry_t.flags_lim, db GDT_FLAGS_LIM
         at gdt_entry_t.base_top, db GDT_BASE_TOP
     iend
-.gdt_data:              ; Data selector
+.gdt_data:              ; Data selector (GDT offset = 0x10)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot, dw GDT_LIM_BOT
         at gdt_entry_t.base_bot, dw GDT_BASE_BOT

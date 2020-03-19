@@ -21,7 +21,8 @@ struc gdt_entry_t
     .flags_lim: resb 1  ; Flags and top nybble of limit
         alignb  1       ; 7:    Granularity: 0 (bytewise), 1 (4KiB pagewise)
                         ; 6:    Size: 0 (16 bit), 1 (32 bit)
-                        ; 4-5:  unset
+                        ; 4:    Reserved for OS: 0 (unused)
+                        ; 5:    Reserved: 0
                         ; 0-3:  Limit
     .base_top:  resb 1  ; Top byte of top word of base
         alignb  1
@@ -34,12 +35,38 @@ struc   gdt_desc_t
         alignb  4
 endstruc
 
-%assign GDT_LIM_BOT 0xFFFF
+%assign GDT_LIM_BOT 0xFFFF  ; Set limit to 4GiB
+                            ; (0 -> 0x0FFFFF) * 4KiB pages
+                            ; = 0x100000 * 4KiB
+                            ; = 2^20 * 4KiB
+                            ; = 1Mi * 4KiB
+                            ; = 4GiB
 %assign GDT_BASE_BOT    0
 %assign GDT_BASE_TOP_BOT    0
 %assign GDT_ACCESS_CODE 0b10011010
+;                         |\|||||+- Set by CPU
+;                         | ||||+-- Writable
+;                         | |||+--- Specified ring only
+;                         | ||+---- Executable
+;                         | |+----- Code/Data (code)
+;                         | +------ Ring 0
+;                         +-------- Present
 %assign GDT_ACCESS_DATA 0b10010010
+;                         |\|||||+- Set by CPU
+;                         | ||||+-- Readable
+;                         | |||+--- Grow up
+;                         | ||+---- Not executable
+;                         | |+----- Code/Data (data)
+;                         | +------ Ring 0
+;                         +-------- Present
 %assign GDT_FLAGS_LIM   0b11001111
+;                         ||||+---- Top nybble of limit
+;                         |||+----- OS reserved (unused)
+;                         ||+------ Reserved
+;                         |+------- 32 bit
+;                         +-------- Pagewise
 %assign GDT_BASE_TOP    0
 
 %endif
+
+; vim: set filetype=nasm:
