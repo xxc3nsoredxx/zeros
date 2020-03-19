@@ -69,4 +69,4 @@ endstruc
 
 %endif
 
-; vim: set filetype=nasm:
+; vim: filetype=asm:syntax=nasm:
