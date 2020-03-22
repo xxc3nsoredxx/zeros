@@ -16,7 +16,6 @@ getpos:
     mul BYTE [COLS]
     add eax, ebx
     add eax, eax
-    add eax, [VGA_BASE]
 
     pop ebx
     mov esp, ebp
@@ -30,20 +29,28 @@ clear:
     mov ebp, esp
     push    edi
     push    esi
+    push    es
+
+    mov ax, gs          ; Set es to point to VRAM
+    mov es, ax
 
     mov esi, .blanks    ; Write ' ' on all locations 2 chars at a time
-    mov edi, [VGA_BASE]
+    mov edi, 0
     movzx   eax, BYTE [ROWS]
     mul BYTE [COLS]
     shr ecx, 1
     mov ecx, eax
-    rep movsd
+.loop:
+    movsd
+    sub esi, 4
+    loop    .loop
 
     mov BYTE [curx], 0
     mov BYTE [cury], 0
 
-    push    esi
-    push    edi
+    pop es
+    pop esi
+    pop edi
     mov esp, ebp
     pop ebp
     ret
@@ -57,25 +64,28 @@ scroll:
     mov ebp, esp
     push    edi
     push    esi
+    push    es
 
-    mov edi, [VGA_BASE] ; Start of first row
-    mov esi, [VGA_BASE] ; Start of second row
+    mov ax, gs
+    mov es, ax
+
+    mov edi, 0          ; Start of first row
+    mov esi, 0          ; Start of second row
     movzx   eax, BYTE [COLS]
-    add esi, eax
+    add eax, eax
     add esi, eax
     movzx   ecx, BYTE [ROWS]    ; Total chars for all but one row
     dec ecx
     movzx   eax, BYTE [COLS]
     mul ecx
     mov ecx, eax
-    rep movsw           ; Move everything one row up
+    gs rep movsw           ; Move everything one row up
 
     add eax, eax        ; Start of last row
-    add eax, [VGA_BASE]
     movzx   ecx, BYTE [COLS]
 .loop:
     dec ecx
-    mov WORD [eax + 2 * ecx], 0x0A20
+    mov WORD [gs:eax + 2 * ecx], 0x0A20
     inc ecx
     loop    .loop
 
@@ -84,6 +94,7 @@ scroll:
     dec eax
     mov BYTE [cury], al
 
+    pop es
     pop esi
     pop edi
     mov esp, ebp
@@ -98,6 +109,10 @@ puts:
     push    ebx
     push    edi
     push    esi
+    push    es
+
+    mov ax, gs
+    mov es, ax
 
     mov ecx, [ebp + 12] ; Length of the string
     cmp ecx, 0
@@ -113,7 +128,7 @@ puts:
     cmp BYTE [esi], 0x0D    ; Carriage return
     je  .cr
     movsb               ; Regular char
-    mov BYTE [edi], bl  ; Color
+    mov BYTE [gs:edi], bl  ; Color
     inc edi
     movzx   eax, BYTE [curx]
     inc eax
@@ -163,6 +178,7 @@ puts:
     inc esi
     loop    .print_jmp
 .done:
+    pop es
     pop esi
     pop edi
     pop ebx
@@ -179,8 +195,8 @@ cury:                   ; Current cursor y
     db  0
 
 section .rodata
-VGA_BASE:               ; Base address for video memory
-    dd  0x000B8000
+; VGA_BASE:               ; Base address for video memory
+;     dd  0x000B8000
 ROWS:                   ; Number of rows on screen
     db  25
 COLS:                   ; Number of cols

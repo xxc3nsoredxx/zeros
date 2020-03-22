@@ -19,5 +19,5 @@ $(OBJ)/kernel0.o: $(SRC)/kernel0.asm $(INC)/gdt.hs $(INC)/multiboot.hs
 $(OBJ)/kernel1.o: $(SRC)/kernel1.asm $(INC)/vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/vga.o: $(SRC)/vga.asm $(INC)/vga.hs
+$(OBJ)/vga.o: $(SRC)/vga.asm $(INC)/vga.hs $(INC)/gdt.hs
 	$(AS) $(AFLAGS) $< -o $@

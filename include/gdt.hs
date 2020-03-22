@@ -35,37 +35,107 @@ struc   gdt_desc_t
         alignb  4
 endstruc
 
-%assign GDT_LIM_BOT 0xFFFF  ; Set limit to 4GiB
-                            ; (0 -> 0x0FFFFF) * 4KiB pages
-                            ; = 0x100000 * 4KiB
-                            ; = 2^20 * 4KiB
-                            ; = 1Mi * 4KiB
-                            ; = 4GiB
-%assign GDT_BASE_BOT    0
-%assign GDT_BASE_TOP_BOT    0
-%assign GDT_ACCESS_CODE 0b10011010
+%assign GDT_STACK_LIM_BOT   0xF7FF  ; Top of stack (highest invalid addr < base)
+                                    ; GDT limit = (4GiB - 1) - length
+                                    ; = 4GiB - 1 - 8MiB
+                                    ; = 0x1 00000000 - 1 - 0x00800000
+                                    ; = 0xFFFFFFFF - 0x00800000
+                                    ; = 0xFF7FFFFF
+                                    ; = 0xFF7FF (* 4KiB pages)
+%assign GDT_STACK_BASE_BOT  0xFFFF  ; Base address (bottom of stack)
+                                ; GDT base = start address + length - 4GiB
+                                ; = 1MiB + 8MiB - 4GiB
+                                ; = 0x00100000 + 0x00800000 - 0x1 00000000
+                                ; = 0x0 00900000 - 0x1 00000000
+                                ; = 0x0 00900000 + 0xF 00000000
+                                ; = 0xF 00900000
+                                ; ~= 0x008FFFFF
+%assign GDT_STACK_BASE_TOP_BOT  0x8F
+%assign GDT_STACK_ACCESS    0b10010110
+;                             |\|||||+- Set by CPU
+;                             | ||||+-- Readable
+;                             | |||+--- Grows down
+;                             | ||+---- Not executable
+;                             | |+----- Code/Data (data)
+;                             | +------ Ring 0
+;                             +-------- Present
+%assign GDT_STACK_FLAGS_LIM 0b11001111
+;                             ||||+---- Top nybble of limit
+;                             |||+----- OS reserved (unused)
+;                             ||+------ Reserved
+;                             |+------- 32 bit
+;                             +-------- Pagewise
+%assign GDT_STACK_BASE_TOP  0
+%assign GDT_CODE_LIM_BOT    0xFFFF  ; Set limit to 4GiB (relative to base)
+                                    ; (0 -> 0xFFFFF) * 4KiB pages
+                                    ; = 0x100000 * 4KiB
+                                    ; = 2^20 * 4KiB
+                                    ; = 1Mi * 4KiB
+                                    ; = 4GiB (really 9MiB + 4GiB)
+%assign GDT_CODE_BASE_BOT   0       ; Code base: 0x00900000
+%assign GDT_CODE_BASE_TOP_BOT   0x90
+%assign GDT_CODE_ACCESS 0b10011010
 ;                         |\|||||+- Set by CPU
-;                         | ||||+-- Writable
+;                         | ||||+-- Readable
 ;                         | |||+--- Specified ring only
 ;                         | ||+---- Executable
 ;                         | |+----- Code/Data (code)
 ;                         | +------ Ring 0
 ;                         +-------- Present
-%assign GDT_ACCESS_DATA 0b10010010
+%assign GDT_CODE_FLAGS_LIM  0b11001111
+;                             ||||+---- Top nybble of limit
+;                             |||+----- OS reserved (unused)
+;                             ||+------ Reserved
+;                             |+------- 32 bit
+;                             +-------- Pagewise
+%assign GDT_CODE_BASE_TOP   0
+%assign GDT_DATA_LIM_BOT    0xFFFF  ; Set limit to 4GiB (relative to base)
+                                    ; (0 -> 0xFFFFF) * 4KiB pages
+                                    ; = 0x100000 * 4KiB
+                                    ; = 2^20 * 4KiB
+                                    ; = 1Mi * 4KiB
+                                    ; = 4GiB (really 9MiB + 4GiB)
+%assign GDT_DATA_BASE_BOT   0       ; Data base: 0x00900000
+%assign GDT_DATA_BASE_TOP_BOT   0x90
+%assign GDT_DATA_ACCESS 0b10010010
 ;                         |\|||||+- Set by CPU
-;                         | ||||+-- Readable
-;                         | |||+--- Grow up
+;                         | ||||+-- Writable
+;                         | |||+--- Grows up
 ;                         | ||+---- Not executable
 ;                         | |+----- Code/Data (data)
 ;                         | +------ Ring 0
 ;                         +-------- Present
-%assign GDT_FLAGS_LIM   0b11001111
-;                         ||||+---- Top nybble of limit
-;                         |||+----- OS reserved (unused)
-;                         ||+------ Reserved
-;                         |+------- 32 bit
-;                         +-------- Pagewise
-%assign GDT_BASE_TOP    0
+%assign GDT_DATA_FLAGS_LIM  0b11001111
+;                             ||||+---- Top nybble of limit
+;                             |||+----- OS reserved (unused)
+;                             ||+------ Reserved
+;                             |+------- 32 bit
+;                             +-------- Pagewise
+%assign GDT_DATA_BASE_TOP   0
+%assign GDT_VRAM_LIM_BOT    0xFFFF  ; Set limit to 64KiB (relative to base)
+                                    ; (0 -> 0x0FFFF)
+%assign GDT_VRAM_BASE_BOT   0x8000  ; VRAM at 0x000B8000
+%assign GDT_VRAM_BASE_TOP_BOT   0x0B
+%assign GDT_VRAM_ACCESS 0b10010010
+;                         |\|||||+- Set by CPU
+;                         | ||||+-- Writable
+;                         | |||+--- Grows up
+;                         | ||+---- Not executable
+;                         | |+----- Code/Data (data)
+;                         | +------ Ring 0
+;                         +-------- Present
+%assign GDT_VRAM_FLAGS_LIM  0b01000000
+;                             ||||+---- Top nybble of limit
+;                             |||+----- OS reserved (unused)
+;                             ||+------ Reserved
+;                             |+------- 32 bit
+;                             +-------- Bytewise
+%assign GDT_VRAM_BASE_TOP   0
+
+%assign GDT_STACK_INDEX 0x08
+%assign GDT_CODE_INDEX  0x10
+%assign GDT_DATA_INDEX  0x18
+%assign GDT_VRAM_INDEX  0x20
 
 %endif
 

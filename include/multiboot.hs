@@ -2,9 +2,10 @@
 %define MULTIBOOT_HS_20200318_233525
 
 ; helper symbols defined by the linker
-extern _mb_load_addr    ; Multiboot code + data load start address
-extern _mb_load_end_addr    ; Multiboot code + data load ends address
-extern _mb_bss_end_addr ; Multiboot bss (+stack) end address
+extern  _mb_load_addr   ; Multiboot code + data load start address
+extern  _mb_load_end_addr   ; Multiboot code + data load ends address
+extern  _mb_bss_end_addr    ; Multiboot bss (+stack) end address
+extern  _mb_entry_addr  ; .text section's load address
 
 ; Multiboot header structure, 4 byte aligned
 struc   mb_header_t
@@ -18,7 +19,7 @@ struc   mb_header_t
         alignb  4
     .load_addr: resd 1  ; Address of code + data start
         alignb  4
-    .load_end_addr: resd 1  ; Address of code + dara end
+    .load_end_addr: resd 1  ; Address of code + data end
         alignb  4
     .bss_end_addr:  resd 1  ; Address of end of bss (and stack for us)
         alignb  4
@@ -35,7 +36,7 @@ struc   mb_header_t
 endstruc
 
 %assign MB_MAGIC 0x1BADB002
-%assign MB_FLAGS 0x00010003 ; Bit 2: video mode
+%assign MB_FLAGS 0x00010004 ; Bit 2: video mode
                             ; Bit 16: use addresses in header
 %assign MB_LOAD_END_ADDR 0  ; Loads the rest of the file
 %assign MB_GRAPHICS_MODE 1  ; Text mode
