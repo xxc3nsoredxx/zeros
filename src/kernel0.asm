@@ -18,9 +18,7 @@ kstart:
 .reload_seg:
     mov ax, GDT_STACK_INDEX ; Set the stack segment
     mov ss, ax          ; 
-    mov esp, 0          ; Set up the stack pointer
-                        ; Starts at 0x00000000
-                        ; Fisrt push makes if 0x008FFFFC (9MiB - 4B)
+    mov esp, 0x800000   ; Set up the stack pointer to the top of the stack
     mov ax, GDT_DATA_INDEX  ; Set the data segment
     mov ds, ax
     mov es, ax          ; Set the other segments

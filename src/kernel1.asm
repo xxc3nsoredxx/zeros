@@ -11,7 +11,7 @@ kmain:
     push    msg
     call    puts
 
-    jmp $
+    ret
 
 section .data
 msg:

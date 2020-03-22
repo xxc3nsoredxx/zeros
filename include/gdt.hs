@@ -35,13 +35,10 @@ struc   gdt_desc_t
         alignb  4
 endstruc
 
-%assign GDT_STACK_LIM_BOT   0xF7FF  ; Top of stack (highest invalid addr < base)
-                                    ; GDT limit = (4GiB - 1) - length
-                                    ; = 4GiB - 1 - 8MiB
-                                    ; = 0x1 00000000 - 1 - 0x00800000
-                                    ; = 0xFFFFFFFF - 0x00800000
-                                    ; = 0xFF7FFFFF
-                                    ; = 0xFF7FF (* 4KiB pages)
+%assign GDT_STACK_LIM_BOT   0x00FF  ; Top of stack (highest invalid addr < base)
+                                    ; = 1MiB - 1
+                                    ; = 0x000FFFFF
+                                    ; = 0x000FF * 4KiB
 %assign GDT_STACK_BASE_BOT  0xFFFF  ; Base address (bottom of stack)
                                 ; GDT base = start address + length - 4GiB
                                 ; = 1MiB + 8MiB - 4GiB
@@ -49,7 +46,7 @@ endstruc
                                 ; = 0x0 00900000 - 0x1 00000000
                                 ; = 0x0 00900000 + 0xF 00000000
                                 ; = 0xF 00900000
-                                ; ~= 0x008FFFFF
+                                ; = 0xF 008FFFFF
 %assign GDT_STACK_BASE_TOP_BOT  0x8F
 %assign GDT_STACK_ACCESS    0b10010110
 ;                             |\|||||+- Set by CPU
@@ -59,7 +56,7 @@ endstruc
 ;                             | |+----- Code/Data (data)
 ;                             | +------ Ring 0
 ;                             +-------- Present
-%assign GDT_STACK_FLAGS_LIM 0b11001111
+%assign GDT_STACK_FLAGS_LIM 0b11000000
 ;                             ||||+---- Top nybble of limit
 ;                             |||+----- OS reserved (unused)
 ;                             ||+------ Reserved
