@@ -34,7 +34,10 @@ if [ ! -d $REPODIR ]; then
     echo "Creating cross-compiler for $TARGET..."
     echo "binutils version: $BINVERSION"
     echo "GCC version: $GCCVERSION"
-    crossdev --stage1 --binutils $BINVERSION --gcc $GCCVERSION --target $TARGET --portage -a --portage -v
+    crossdev --stage1 --binutils $BINVERSION --gcc $GCCVERSION \
+        --target $TARGET --portage -a --portage -v
 else
     echo "Repo $REPO exists"
 fi
+
+

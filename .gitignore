@@ -1,5 +1,5 @@
 /bin
-/iso/*
+/iso*/*
 /obj/*
 
 *.o

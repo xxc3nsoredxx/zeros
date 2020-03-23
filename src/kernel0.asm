@@ -28,16 +28,20 @@ kstart:
     call    kmain       ; Kernel main function
     hlt                 ; Halt the CPU after leaving kernel
 
-; section .stack nobits alloc noexec write align=16
-; stack_bot:
-;     resb    8 * 1024 * 1024 ; 8MiB stack
-; stack:                  ; Stack pointer at highest address
-
 section .gdt progbits alloc noexec nowrite align=4
 gdt:                    ; The start of the GDT
 .gdt_null:              ; Null selector (GDT offset = 0x00)
     dq  0               ; All zeros
-.gdt_stack:             ; Stack selector (GDT offset = 0x08)
+.gdt_vram:              ; VRAM selector (GDT offset = 0x08)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot, dw GDT_VRAM_LIM_BOT
+        at gdt_entry_t.base_bot, dw GDT_VRAM_BASE_BOT
+        at gdt_entry_t.base_top_bot, db GDT_VRAM_BASE_TOP_BOT
+        at gdt_entry_t.access, db GDT_VRAM_ACCESS
+        at gdt_entry_t.flags_lim, db GDT_VRAM_FLAGS_LIM
+        at gdt_entry_t.base_top, db GDT_VRAM_BASE_TOP
+    iend
+.gdt_stack:             ; Stack selector (GDT offset = 0x10)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot, dw GDT_STACK_LIM_BOT
         at gdt_entry_t.base_bot, dw GDT_STACK_BASE_BOT
@@ -46,7 +50,7 @@ gdt:                    ; The start of the GDT
         at gdt_entry_t.flags_lim, db GDT_STACK_FLAGS_LIM
         at gdt_entry_t.base_top, db GDT_STACK_BASE_TOP
     iend
-.gdt_code:              ; Code selector (GDT offset = 0x10)
+.gdt_code:              ; Code selector (GDT offset = 0x18)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot, dw GDT_CODE_LIM_BOT
         at gdt_entry_t.base_bot, dw GDT_CODE_BASE_BOT
@@ -55,7 +59,7 @@ gdt:                    ; The start of the GDT
         at gdt_entry_t.flags_lim, db GDT_CODE_FLAGS_LIM
         at gdt_entry_t.base_top, db GDT_CODE_BASE_TOP
     iend
-.gdt_data:              ; Data selector (GDT offset = 0x18)
+.gdt_data:              ; Data selector (GDT offset = 0x20)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot, dw GDT_DATA_LIM_BOT
         at gdt_entry_t.base_bot, dw GDT_DATA_BASE_BOT
@@ -63,15 +67,6 @@ gdt:                    ; The start of the GDT
         at gdt_entry_t.access, db GDT_DATA_ACCESS
         at gdt_entry_t.flags_lim, db GDT_DATA_FLAGS_LIM
         at gdt_entry_t.base_top, db GDT_DATA_BASE_TOP
-    iend
-.gdt_vram:              ; VRAM selector (GDT offset = 0x20)
-    istruc  gdt_entry_t
-        at gdt_entry_t.limit_bot, dw GDT_VRAM_LIM_BOT
-        at gdt_entry_t.base_bot, dw GDT_VRAM_BASE_BOT
-        at gdt_entry_t.base_top_bot, db GDT_VRAM_BASE_TOP_BOT
-        at gdt_entry_t.access, db GDT_VRAM_ACCESS
-        at gdt_entry_t.flags_lim, db GDT_VRAM_FLAGS_LIM
-        at gdt_entry_t.base_top, db GDT_VRAM_BASE_TOP
     iend
 .end:                   ; End of GDT
 gdt_desc:               ; GDT descriptor
