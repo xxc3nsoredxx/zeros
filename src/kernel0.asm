@@ -30,10 +30,6 @@ kstart:
     ; TODO: Re-enable interrupts
     xor eax, eax        ; Reprogram the PIC to use interrupts 0x20 to 0x2F
                         ; That way they don't interfere with the first 32
-    in  al, PIC_M_DATA  ; Save the masks
-    push    eax
-    in  al, PIC_S_DATA
-    push    eax
     mov al, PIC_INIT | PIC_ICW1_4   ; ICW1: init and tell PIC ICW4 is provided
     out PIC_M_CMD, al
     out PIC_S_CMD, al
@@ -48,13 +44,48 @@ kstart:
     mov al, PIC_ICW4_86
     out PIC_M_DATA, al
     out PIC_S_DATA, al
-    pop eax             ; Restore masks
-    out PIC_S_DATA, al
-    pop eax
+    mov al, 0xFF        ; Mask all interrupts (except keyboard)
     out PIC_M_DATA, al
+    mov al, 0xFF
+    out PIC_S_DATA, al
+
+    mov eax, master_null    ; Fill in IRQ 0 offsets
+    mov [idt.irq0 + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.irq0 + idt_entry_t.off_top], ax
+
+    mov eax, kb_int     ; Fill in IRQ 1 offsets
+    mov [idt.irq1 + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.irq1 + idt_entry_t.off_top], ax
+
+    %assign irq_off 0   ; Fill in rest of the PIC master offsets
+    %rep    6
+    mov eax, master_null
+    mov [idt.irq2_7 + irq_off + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.irq2_7 + irq_off + idt_entry_t.off_top], ax
+    %assign irq_off irq_off + 8
+    %endrep
+
+    %assign irq_off 0   ; Fill in the PIC slave offsets
+    %rep    8
+    mov eax, slave_null
+    mov [idt.irq8_15 + irq_off + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.irq8_15 + irq_off + idt_entry_t.off_top], ax
+    %assign irq_off irq_off + 8
+    %endrep
+
+    lidt    [idt_desc]  ; Load the IDT
+    sti                 ; Re-enable interrupts
 
     call    kmain       ; Kernel main function
-    hlt                 ; Halt the CPU after leaving kernel
+
+    jmp $
+
+    cli                 ; Halt the CPU after leaving kernel
+    hlt
 
 section .gdt progbits alloc noexec nowrite align=4
 gdt:                    ; The start of the GDT
@@ -105,7 +136,54 @@ gdt_desc:               ; GDT descriptor
 
 section .idt progbits alloc noexec nowrite align=4
 idt:                    ; Start of the IDT
-%rep    32              ; Pmode exceptions (null entries for now)
+.pm_ex:                 ; Pmode exceptions (null entries for now)
+%rep    32
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot, dw 0
+        at idt_entry_t.selector, dw 0
+        at idt_entry_t.zero, db 0
+        at idt_entry_t.type_attr, db 0
+        at idt_entry_t.off_top, dw 0
+    iend
+%endrep
+.irq0:                  ; PIC interrupt timer (null handler for now)
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot, dw 0xFFFF   ; Filled in code
+        at idt_entry_t.selector, dw GDT_CODE_INDEX
+        at idt_entry_t.zero, db 0
+        at idt_entry_t.type_attr, db INT_GATE
+        at idt_entry_t.off_top, dw 0xFFFF   ; Filled in code
+    iend
+.irq1:                  ; PIC keyboard
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot, dw 0xFFFF
+        at idt_entry_t.selector, dw GDT_CODE_INDEX
+        at idt_entry_t.zero, db 0
+        at idt_entry_t.type_attr, db INT_GATE
+        at idt_entry_t.off_top, dw 0xFFFF
+    iend
+.irq2_7:               ; Rest of PIC master interrupts (null handler for now)
+%rep    6
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot, dw 0xFFFF
+        at idt_entry_t.selector, dw GDT_CODE_INDEX
+        at idt_entry_t.zero, db 0
+        at idt_entry_t.type_attr, db INT_GATE
+        at idt_entry_t.off_top, dw 0xFFFF
+    iend
+%endrep
+.irq8_15:               ; Rest of PIC slave interrupts (null handler for now)
+%rep    8
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot, dw 0xFFFF
+        at idt_entry_t.selector, dw GDT_CODE_INDEX
+        at idt_entry_t.zero, db 0
+        at idt_entry_t.type_attr, db INT_GATE
+        at idt_entry_t.off_top, dw 0xFFFF
+    iend
+%endrep
+.rest:                  ; Rest of the IDT (null entries for now)
+%rep    208
     istruc  idt_entry_t
         at idt_entry_t.off_bot, dw 0
         at idt_entry_t.selector, dw 0

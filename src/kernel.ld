@@ -29,7 +29,6 @@ SECTIONS
 
     /* Align it to 4KiB boundaries, start at 9MiB */
     . = 0x00900000;
-
     /* Load GDT before code */
     .gdt ALIGN(4) :
     {
@@ -40,16 +39,16 @@ SECTIONS
      * Load IDT after GDT
      * 256 * 8B = 2KiB long
      */
-    .idt ALIGN(4) :
+    .idt SIZEOF(.gdt) : AT(LOADADDR(.gdt) + SIZEOF(.gdt))
     {
         *kernel0.o (.idt)
-    } = 0x00
+    } =0x00
 
     /**
      * .text segment begins at virtual address 0x00001000 (4KiB)
      * The physical address is 4KiB after start of GDT in RAM
      */
-    .text 0x00001000 : AT(ADDR(.gdt) + 4K)
+    .text 0x00001000 : AT(LOADADDR(.gdt) + 4K)
     {
         /* Multiboot loader jumps to address of kernel0/kstart */
         *kernel0.o (.text)
@@ -57,13 +56,13 @@ SECTIONS
     } =0x90
 
     /* Readonly data */
-    .rodata ALIGN(4) :
+    .rodata :
     {
         * (.rodata)
     } =0x00
 
     /* Initialized data */
-    .data ALIGN(4) :
+    .data :
     {
         * (.data)
     } =0x00

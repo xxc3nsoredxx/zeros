@@ -1,6 +1,10 @@
 %ifndef IDT_HS_20200327_065700
 %define IDT_HS_20200327_065700
 
+extern  master_null
+extern  slave_null
+extern  kb_int
+
 struc idt_entry_t
     .off_bot:   resw 1  ; Bottom word of routine's offset (ie pointer)
         alignb  2
@@ -28,6 +32,8 @@ struc idt_desc_t
     .idt:   resd 1      ; Address of IDT
         alignb  4
 endstruc
+
+%assign INT_GATE    0b10001110  ; Attribute byte for interrupt gates
 
 ; 8259 Programmable Interrupt Controller I/O ports
 %assign PIC_M_CMD   0x20    ; PIC master command port
