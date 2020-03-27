@@ -29,7 +29,7 @@ struc gdt_entry_t
 endstruc
 
 struc   gdt_desc_t
-    .size:  resw 1      ; Size of GDT
+    .size:  resw 1      ; Size of GDT - 1
         alignb  2
     .gdt:   resd 1      ; Address of GDT
         alignb  4

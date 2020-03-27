@@ -27,26 +27,31 @@ SECTIONS
         *kernel0.o (.multiboot)
     } =0x00
 
-    /**
-     * Multiboot loader jumps to address of kernel0/kstart
-     * Align it to 4KiB boundaries, start at 9MiB
-     */
+    /* Align it to 4KiB boundaries, start at 9MiB */
     . = 0x00900000;
+
     /* Load GDT before code */
-    /* .gdt : */
     .gdt ALIGN(4) :
     {
         *kernel0.o (.gdt)
     } =0x00
 
     /**
+     * Load IDT after GDT
+     * 256 * 8B = 2KiB long
+     */
+    .idt ALIGN(4) :
+    {
+        *kernel0.o (.idt)
+    } = 0x00
+
+    /**
      * .text segment begins at virtual address 0x00001000 (4KiB)
      * The physical address is 4KiB after start of GDT in RAM
      */
-    .text 0x00001000 :
-    /* .text ALIGN(4K) : */
-    AT(ADDR(.gdt) + 4K)
+    .text 0x00001000 : AT(ADDR(.gdt) + 4K)
     {
+        /* Multiboot loader jumps to address of kernel0/kstart */
         *kernel0.o (.text)
         * (.text)
     } =0x90

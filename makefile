@@ -8,7 +8,7 @@ LD = i386-elf-ld
 LFLAGS = -M --fatal-warnings
 QEMU = qemu-system-i386
 QFLAGS = -drive file=zeros.iso,format=raw
-OBJS = $(addprefix $(OBJ)/,kernel0.o kernel1.o vga.o)
+OBJS = $(addprefix $(OBJ)/,interrupts.o kernel0.o kernel1.o vga.o)
 
 .PHONY: all relink install run
 all: $(BIN)/kernel.bin
@@ -26,7 +26,10 @@ run:
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
 
-$(OBJ)/kernel0.o: $(SRC)/kernel0.asm $(INC)/gdt.hs $(INC)/multiboot.hs
+$(OBJ)/interrupts.o: $(SRC)/interrupts.asm $(INC)/idt.hs
+	$(AS) $(AFLAGS) $< -o $@
+
+$(OBJ)/kernel0.o: $(SRC)/kernel0.asm $(INC)/idt.hs $(INC)/gdt.hs $(INC)/multiboot.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/kernel1.o: $(SRC)/kernel1.asm $(INC)/vga.hs

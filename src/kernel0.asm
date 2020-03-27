@@ -3,6 +3,7 @@
     bits    32
 
 %include    "gdt.hs"
+%include    "idt.hs"
 %include    "multiboot.hs"
 
 global  kstart          ; Make kstart visible
@@ -25,6 +26,33 @@ kstart:
     mov fs, ax
     mov ax, GDT_VRAM_INDEX  ; Save the VRAM segment in gs
     mov gs, ax
+    
+    ; TODO: Re-enable interrupts
+    xor eax, eax        ; Reprogram the PIC to use interrupts 0x20 to 0x2F
+                        ; That way they don't interfere with the first 32
+    in  al, PIC_M_DATA  ; Save the masks
+    push    eax
+    in  al, PIC_S_DATA
+    push    eax
+    mov al, PIC_INIT | PIC_ICW1_4   ; ICW1: init and tell PIC ICW4 is provided
+    out PIC_M_CMD, al
+    out PIC_S_CMD, al
+    mov al, PIC_M_OFF   ; Set the offset for the master (ICW2)
+    out PIC_M_DATA, al
+    mov al, PIC_S_OFF   ; Set the offset for the slave (ICW2)
+    out PIC_S_DATA, al
+    mov al, PIC_M_ICW3
+    out PIC_M_DATA, al
+    mov al, PIC_S_ICW3
+    out PIC_S_DATA, al
+    mov al, PIC_ICW4_86
+    out PIC_M_DATA, al
+    out PIC_S_DATA, al
+    pop eax             ; Restore masks
+    out PIC_S_DATA, al
+    pop eax
+    out PIC_M_DATA, al
+
     call    kmain       ; Kernel main function
     hlt                 ; Halt the CPU after leaving kernel
 
@@ -73,6 +101,24 @@ gdt_desc:               ; GDT descriptor
     istruc  gdt_desc_t
         at gdt_desc_t.size, dw gdt.end - gdt - 1
         at gdt_desc_t.gdt, dd gdt
+    iend
+
+section .idt progbits alloc noexec nowrite align=4
+idt:                    ; Start of the IDT
+%rep    32              ; Pmode exceptions (null entries for now)
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot, dw 0
+        at idt_entry_t.selector, dw 0
+        at idt_entry_t.zero, db 0
+        at idt_entry_t.type_attr, db 0
+        at idt_entry_t.off_top, dw 0
+    iend
+%endrep
+.end:                   ; End of IDT
+idt_desc:               ; IDT descriptor
+    istruc  idt_desc_t
+        at idt_desc_t.size, dw idt.end - idt - 1
+        at idt_desc_t.idt, dd idt
     iend
 
 section .multiboot progbits align=4
