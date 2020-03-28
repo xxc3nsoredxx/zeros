@@ -1,6 +1,8 @@
 %ifndef GDT_HS_20200318_232100
 %define GDT_HS_20200318_232100
 
+extern  _mem_base
+
 struc gdt_entry_t
     .limit_bot: resw 1  ; Bottom word of segment limit
         alignb  2

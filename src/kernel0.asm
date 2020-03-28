@@ -44,9 +44,8 @@ kstart:
     mov al, PIC_ICW4_86
     out PIC_M_DATA, al
     out PIC_S_DATA, al
-    mov al, 0xFF        ; Mask all interrupts (except keyboard)
+    mov al, 0xFF        ; Disable all IRQs
     out PIC_M_DATA, al
-    mov al, 0xFF
     out PIC_S_DATA, al
 
     mov eax, master_null    ; Fill in IRQ 0 offsets
@@ -77,15 +76,17 @@ kstart:
     %assign irq_off irq_off + 8
     %endrep
 
+    ; Fix the start address of the IDT, set it to the physical address
+    add DWORD [idt_desc + idt_desc_t.idt], _mem_base
     lidt    [idt_desc]  ; Load the IDT
     sti                 ; Re-enable interrupts
 
+    mov al, 0xFD        ; Enable IRQ 1 (keyboard)
+    out PIC_M_DATA, al
+
     call    kmain       ; Kernel main function
 
-    jmp $
-
-    cli                 ; Halt the CPU after leaving kernel
-    hlt
+    hlt                 ; Halt the CPU after leaving kernel
 
 section .gdt progbits alloc noexec nowrite align=4
 gdt:                    ; The start of the GDT

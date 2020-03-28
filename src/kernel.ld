@@ -17,6 +17,7 @@ SECTIONS
      * no .bss to multiboot
      */
     _mb_bss_end_addr = MIN(1, SIZEOF(.bss)) * LOADADDR(.bss) + SIZEOF(.bss);
+    _mem_base = 0x00900000;
 
     /**
      * Multiboot header is at the front of the image
@@ -28,7 +29,7 @@ SECTIONS
     } =0x00
 
     /* Align it to 4KiB boundaries, start at 9MiB */
-    . = 0x00900000;
+    . = _mem_base;
     /* Load GDT before code */
     .gdt ALIGN(4) :
     {

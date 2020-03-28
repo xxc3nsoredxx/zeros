@@ -26,7 +26,7 @@ run:
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
 
-$(OBJ)/interrupts.o: $(SRC)/interrupts.asm $(INC)/idt.hs
+$(OBJ)/interrupts.o: $(SRC)/interrupts.asm $(INC)/idt.hs $(INC)/kb.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/kernel0.o: $(SRC)/kernel0.asm $(INC)/idt.hs $(INC)/gdt.hs $(INC)/multiboot.hs
