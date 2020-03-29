@@ -11,6 +11,16 @@ kmain:
     push    msg
     call    puts
 
+    push    0x0D
+    call    putch
+    push    0x0A
+    call    putch
+
+    %rep    200
+    push    'A'
+    call    putch
+    %endrep
+
     jmp $
 
     ret

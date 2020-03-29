@@ -2,6 +2,7 @@
 %define VGA_HS_20200312_234110
 
 extern  puts
+extern  putch
 
 %endif
 

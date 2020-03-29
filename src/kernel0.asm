@@ -13,7 +13,6 @@ section .text
 ; Kernel entry poin
 kstart:
     cli                 ; Disable interrupts
-                        ; Will be reenabled by kernel later
     lgdt    [gdt_desc]  ; Load the GDT
     jmp GDT_CODE_INDEX:.reload_seg  ; The jump reloads CS
 .reload_seg:
@@ -24,12 +23,11 @@ kstart:
     mov ds, ax
     mov es, ax          ; Set the other segments
     mov fs, ax
-    mov ax, GDT_VRAM_INDEX  ; Save the VRAM segment in gs
+    mov ax, GDT_VRAM_INDEX  ; Save the VRAM segment in GS
     mov gs, ax
     
-    ; TODO: Re-enable interrupts
-    xor eax, eax        ; Reprogram the PIC to use interrupts 0x20 to 0x2F
-                        ; That way they don't interfere with the first 32
+    ; Reprogram the PIC to use interrupts 0x20 to 0x2F as to not interfere
+    ; with hardware interrupts 0 to 31
     mov al, PIC_INIT | PIC_ICW1_4   ; ICW1: init and tell PIC ICW4 is provided
     out PIC_M_CMD, al
     out PIC_S_CMD, al

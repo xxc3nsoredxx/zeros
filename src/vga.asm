@@ -116,7 +116,7 @@ puts:
 
     mov ecx, [ebp + 12] ; Length of the string
     cmp ecx, 0
-    jz  .done       ; Skip all if zero length
+    jz  .done           ; Skip all if zero length
     mov esi, [ebp + 8]  ; Address of the first character
     call    getpos      ; Get the current pos
     mov edi, eax
@@ -188,6 +188,48 @@ puts:
 .print_jmp:
     jmp .print
 
+; void putch (char c)
+; Prints a single character on the screem
+putch:
+    push    ebp
+    mov ebp, esp
+    push    ebx
+
+    mov bl, [ebp + 8]   ; Build the letter+attribute into BX
+    cmp bl, 0x0D        ; Test carriage return
+    jz  .cr
+    cmp bl, 0x0A        ; Test newline
+    jz  .nl
+    mov bh, [COLOR]
+    push    eax
+    call    getpos
+    mov WORD [gs:eax], bx   ; Write to screen
+    pop eax
+    inc BYTE [curx]
+    mov bl, [COLS]      ; Test word wrap
+    cmp [curx], bl
+    jz  .wrap
+    jmp .done
+.cr:                    ; Handle carriage return
+    mov BYTE [curx], 0
+    jmp .done
+.nl:                    ; Handle newline
+    inc BYTE [cury]
+    jmp .testscroll
+.wrap:                  ; Handle word wrap
+    inc BYTE [cury]
+    mov BYTE [curx], 0
+.testscroll:
+    mov bl, [ROWS]      ; Test scroll
+    cmp [cury], bl
+    jnz .done
+    call    scroll
+.done:
+    pop ebx
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 section .data
 curx:                   ; Current cursor x
     db  0
@@ -195,8 +237,6 @@ cury:                   ; Current cursor y
     db  0
 
 section .rodata
-; VGA_BASE:               ; Base address for video memory
-;     dd  0x000B8000
 ROWS:                   ; Number of rows on screen
     db  25
 COLS:                   ; Number of cols

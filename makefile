@@ -1,17 +1,22 @@
+vpath %.asm src
+vpath %.ld src
+vpath %.hs include
+vpath %.o obj
+vpath %.bin bin
 SRC = src
 INC = include
-BIN = bin
 OBJ = obj
+BIN = bin
 AS = nasm
 AFLAGS = -f elf32 -Wall -Werror -I $(INC)/
 LD = i386-elf-ld
 LFLAGS = -M --fatal-warnings
 QEMU = qemu-system-i386
 QFLAGS = -drive file=zeros.iso,format=raw
-OBJS = $(addprefix $(OBJ)/,interrupts.o kernel0.o kernel1.o vga.o)
+OBJS = interrupts.o kb.o kernel0.o kernel1.o vga.o
 
 .PHONY: all relink install run
-all: $(BIN)/kernel.bin
+all: kernel.bin
 
 relink:
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $(OBJS) -o $(BIN)/kernel.bin
@@ -26,14 +31,17 @@ run:
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
 
-$(OBJ)/interrupts.o: $(SRC)/interrupts.asm $(INC)/idt.hs $(INC)/kb.hs
+$(OBJ)/interrupts.o: interrupts.asm idt.hs kb.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel0.o: $(SRC)/kernel0.asm $(INC)/idt.hs $(INC)/gdt.hs $(INC)/multiboot.hs
+$(OBJ)/kb.o: kb.asm kb.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel1.o: $(SRC)/kernel1.asm $(INC)/vga.hs
+$(OBJ)/kernel0.o: kernel0.asm gdt.hs idt.hs multiboot.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/vga.o: $(SRC)/vga.asm $(INC)/vga.hs $(INC)/gdt.hs
+$(OBJ)/kernel1.o: kernel1.asm vga.hs
+	$(AS) $(AFLAGS) $< -o $@
+
+$(OBJ)/vga.o: vga.asm vga.hs gdt.hs
 	$(AS) $(AFLAGS) $< -o $@

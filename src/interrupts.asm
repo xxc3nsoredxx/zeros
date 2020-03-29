@@ -28,10 +28,6 @@ kb_int:
     mov al, PIC_EOI
     out PIC_M_CMD, al
 
-    in  al, KB_STAT     ; Read keyboard status
-    and al, KB_STAT_OUTPUT  ; If key is queued, read key
-    jz  .skip_read
-    in  al, KB_DATA
-.skip_read:
+    in  al, KB_DATA     ; Get the scancode
     pop eax
     iret
