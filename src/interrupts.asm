@@ -136,18 +136,32 @@ kb_int:
     jmp .done
 
 .pause7:                ; Handle pause key, 7 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .pause6:                ; Handle pause key, 6 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .pause5:                ; Handle pause key, 5 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .pause4:                ; Handle pause key, 4 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .pause3:                ; Handle pause key, 3 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .pause2:                ; Handle pause key, 2 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .pause1:                ; Handle pause key, 1 byte left
+    mov BYTE [keycode.state], KC_STATE_WAIT
+    jmp .done
 
 .done:
     mov al, PIC_EOI
