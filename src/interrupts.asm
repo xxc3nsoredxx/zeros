@@ -115,6 +115,13 @@ kb_int:
     jmp .done
 
 .e0_rel:                ; Handle relaeased E0 key
+    cmp al, 0x7C        ; Print screen released
+    jz  .new_ps_rel
+    mov BYTE [keycode.state], KC_STATE_WAIT
+    jmp .done
+.new_ps_rel:            ; Set print screen released 3 bytes left state
+    mov BYTE [keycode.state], KC_STATE_PS_REL + 3
+    jmp .done
 
 .ps_rel3:               ; Handle released print screen, 3 bytes left
 
