@@ -5,6 +5,7 @@ extern  kb_init         ; Keyboard initialization
 extern  keycode.mod     ; The most recent keypress (modifier byte)
 extern  keycode.key     ; The most recent keypress (value byte)
 extern  keycode.state   ; The most recent keypress (state of scan code parse)
+extern  SC2_BASIC       ; Keymap for scan code 2 basic keys
 
 ; PS/2 ports
 %assign PS2_DATA 0x60   ; Data port (r/w)

@@ -32,6 +32,7 @@ slave_null:
 kb_int:
     pusha
 
+    xor eax, eax
     mov al, PIC_EOI
     out PIC_M_CMD, al
 
@@ -77,7 +78,8 @@ kb_int:
     jz  .new_rel
     cmp al, 0xE1        ; New pause key
     jz  .new_pause
-    add al, 0x20        ; New basic key
+    lea eax, [SC2_BASIC + eax]  ; New basic key
+    mov al, [eax]
     push    eax
     call    putch
     jmp .done
