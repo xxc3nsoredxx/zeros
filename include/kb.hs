@@ -6,11 +6,15 @@ extern  keycode.mod     ; The most recent keypress (modifier byte)
 extern  keycode.key     ; The most recent keypress (value byte)
 extern  keycode.state   ; The most recent keypress (state of scan code parse)
 extern  SC2_BASIC       ; Keymap for scan code 2 basic keys
+extern  SHIFT_TABLE     ; Characters when shift applied
 
-; PS/2 ports
-%assign PS2_DATA 0x60   ; Data port (r/w)
-%assign PS2_STAT 0x64   ; Status port (r)
-%assign PS2_CMD  0x64   ; Command port (w)
+; PS/2 I/O ports
+%assign PS2_DATA    0x60    ; Data port (r/w)
+%assign PS2_STAT    0x64    ; Status port (r)
+%assign PS2_CMD     0x64    ; Command port (w)
+
+; Keyboard I/O ports
+%assign KB_CMD  0x60    ; Keyboard command port (r/w)
 
 ; Commands
 %assign PS2_DIS_1       0xAD    ; Disable port 1
@@ -19,6 +23,9 @@ extern  SC2_BASIC       ; Keymap for scan code 2 basic keys
 %assign PS2_EN_2        0xA8    ; Enable port 2
 %assign PS2_READ_CONF   0x20    ; Read configuration byte
 %assign PS2_WRITE_CONF  0x60    ; Write configuration byte
+
+; Keyboard response
+%assign KB_ACK  0xFA    ; Keyboard ACK
 
 ; Status byte flags bits
 ; 7:    Parity error: 0 (no error), 1 (error)
@@ -42,6 +49,13 @@ extern  SC2_BASIC       ; Keymap for scan code 2 basic keys
 ; 0:    Port 1 interrupt: 0 (disabled), 1 (enabled)
 %assign PS2_CONF_MASK   0b00110100
 %assign PS2_CONF_MASK2  0b00000011
+
+; Keyboard leds
+%assign KB_LED_CMD  0xED        ; Command for LED control
+%assign KB_LED_OFF  0           ; All off
+%assign KB_LED_SL   0b00000001  ; Scroll lock
+%assign KB_LED_NL   0b00000010  ; Num lock
+%assign KB_LED_CL   0b00000100  ; Caps lock
 
 ; Keycode modifiers
 ; Bits:

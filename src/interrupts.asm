@@ -78,10 +78,39 @@ kb_int:
     jz  .new_rel
     cmp al, 0xE1        ; New pause key
     jz  .new_pause
-    lea eax, [SC2_BASIC + eax]  ; New basic key
-    mov al, [eax]
+    movzx   eax, BYTE [SC2_BASIC + eax] ; New basic key
+    cmp al, 0x91        ; Handle caps lock
+    jz  .caps
+    cmp al, 0x92        ; Handle shift
+    jz  .shift
+    cmp al, 0x9D
+    jz  .shift
+    mov bl, [keycode.mod]   ; If caps, do uppercase
+    and bl, KC_MOD_CAPS
+    jz  .nocaps
+    cmp al, 'a'         ; Test if letter
+    jb  .nocaps
+    cmp al, 'z'
+    ja  .nocaps
+    movzx   eax, BYTE [SHIFT_TABLE + eax]
+.nocaps:
+    mov bl, [keycode.mod]   ; Test for shift
+    and bl, KC_MOD_SHIFT
+    jz  .noshift
+    movzx   eax, BYTE [SHIFT_TABLE + eax]
+.noshift:
     push    eax
     call    putch
+    jmp .done
+.caps:
+    mov al, [keycode.mod]   ; Toggle caps lock flag
+    xor al, KC_MOD_CAPS
+    mov [keycode.mod], al
+    jmp .done
+.shift:
+    mov al, [keycode.mod]   ; Set shift flag
+    or  al, KC_MOD_SHIFT
+    mov [keycode.mod], al
     jmp .done
 .new_e0:                ; Set E0 state
     mov BYTE [keycode.state], KC_STATE_E0
@@ -116,6 +145,17 @@ kb_int:
     jmp .done
 
 .rel:                   ; Handle released key
+    mov al, [SC2_BASIC + eax]   ; Get basic key
+    cmp al, 0x92        ; Handle shift
+    jz  .shift_rel
+    cmp al, 0x9D
+    jz  .shift_rel
+    mov BYTE [keycode.state], KC_STATE_WAIT
+    jmp .done
+.shift_rel:             ; Handle released shift
+    mov al, [keycode.mod]   ; Clear shift flag
+    and al, ~KC_MOD_SHIFT
+    mov [keycode.mod], al
     mov BYTE [keycode.state], KC_STATE_WAIT
     jmp .done
 

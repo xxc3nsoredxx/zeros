@@ -123,6 +123,19 @@ SC2_BASIC:              ; Basic keys
     db  0x8B, 0, 0, 0           ; F11       NUM +   NUM 3   NUM - dash
     db  0, 0, 0, 0              ; NUM *     NUM 9   ScrLock n/a
     db  0, 0, 0, 0x87           ; n/a       n/a     n/a     F7
+SHIFT_TABLE:
+    times 0x27  db 0
+    db  '"'
+    times 4 db 0
+    db  '<_>?)!@#$%^&*('
+    db  0
+    db  ':'
+    db  0
+    db  '+'
+    times 3 db 0
+    db  'abcdefghijklmnopqrstuvwxyz{|}'
+    times 2 db 0
+    db  '~ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 section .bss
 keycode:
