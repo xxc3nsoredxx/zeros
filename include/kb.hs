@@ -2,7 +2,9 @@
 %define KB_HS_20200327_182505
 
 extern  kb_init         ; Keyboard initialization
-extern  keycode         ; The most recent keypress
+extern  keycode.mod     ; The most recent keypress (modifier byte)
+extern  keycode.key     ; The most recent keypress (value byte)
+extern  keycode.state   ; The most recent keypress (state of scan code parse)
 
 ; PS/2 ports
 %assign PS2_DATA 0x60   ; Data port (r/w)
@@ -41,8 +43,28 @@ extern  keycode         ; The most recent keypress
 %assign PS2_CONF_MASK2  0b00000011
 
 ; Keycode modifiers
-%assign KC_MOD_SHIFT    0x01
-%assign KC_MOD_CAPS     0x02
+; Bits:
+;   2-7:    Unused
+;   1:      Caps:   0 (inactive), 1 (active)
+;   0:      Shift:  0 (inactive), 1 (active)
+%assign KC_MOD_SHIFT    0b00000001
+%assign KC_MOD_CAPS     0b00000010
+
+; Keycode state
+; 0x00: Waiting for new scan code
+; 0x10: Read 0xE0
+; 0x2n: Read 0xE0 12 (print screen, n bytes left)
+; 0x30: Read 0xF0 (key released)
+; 0x40: Read 0xE0 F0 (E0 key released)
+; 0x5n: Read 0xE0 F0 7C (print screen rel, n bytes left)
+; 0x6n: Read 0xE1 (pause, n bytes left)
+%assign KC_STATE_WAIT   0x00
+%assign KC_STATE_E0     0x10
+%assign KC_STATE_PS     0x20
+%assign KC_STATE_REL    0x30
+%assign KC_STATE_E0_REL 0x40
+%assign KC_STATE_PS_REL 0x50
+%assign KC_STATE_PAUSE  0x60
 
 %endif
 

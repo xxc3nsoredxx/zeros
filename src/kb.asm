@@ -90,11 +90,8 @@ kb_init:
 
 section .bss
 keycode:
-.modifier:              ; Modifiers active
-    resb    1           ; Bits:
-                        ;   2-7:    Unused
-                        ;   1:      Caps:   0 (inactive), 1 (active)
-                        ;   0:      Shift:  0 (inactive), 1 (active)
+.mod:                   ; Modifiers active
+    resb    1
 .key:                   ; Pressed key (non-modifier)
     resb    1           ; ASCII code:
                         ;   Letters     (lowercase, 0x61 to 0x7A)
@@ -104,3 +101,5 @@ keycode:
                         ;   Newline     (0x0A, return)
                         ;   Space       (0x20, space bar)
                         ;   Backspace   (0x08)
+.state:                 ; Current state
+    resb    1
