@@ -32,39 +32,42 @@ slave_null:
 kb_int:
     pusha
 
+    mov al, PIC_EOI
+    out PIC_M_CMD, al
+
     in  al, PS2_DATA    ; Get the scancode
-    mov cl, [keycode.state] ; Get the current state
-    cmp cl, KC_STATE_WAIT   ; New key
+    mov bl, [keycode.state] ; Get the current state
+    cmp bl, KC_STATE_WAIT   ; New key
     jz  .new
-    cmp cl, KC_STATE_E0 ; E0 key
+    cmp bl, KC_STATE_E0 ; E0 key
     jz  .e0
-    cmp cl, KC_STATE_PS + 2 ; Print screen, 2 bytes left
+    cmp bl, KC_STATE_PS + 2 ; Print screen, 2 bytes left
     jz  .ps2
-    cmp cl, KC_STATE_PS + 1 ; Print screen, 1 byte left
+    cmp bl, KC_STATE_PS + 1 ; Print screen, 1 byte left
     jz  .ps1
-    cmp cl, KC_STATE_REL    ; Key released
+    cmp bl, KC_STATE_REL    ; Key released
     jz  .rel
-    cmp cl, KC_STATE_E0_REL ; E0 key released
+    cmp bl, KC_STATE_E0_REL ; E0 key released
     jz  .e0_rel
-    cmp cl, KC_STATE_PS_REL + 3 ; Print screen released, 3 bytes left
+    cmp bl, KC_STATE_PS_REL + 3 ; Print screen released, 3 bytes left
     jz  .ps_rel3
-    cmp cl, KC_STATE_PS_REL + 2 ; Print screen released, 2 bytes left
+    cmp bl, KC_STATE_PS_REL + 2 ; Print screen released, 2 bytes left
     jz  .ps_rel2
-    cmp cl, KC_STATE_PS_REL + 1 ; Print screen released, 1 byte left
+    cmp bl, KC_STATE_PS_REL + 1 ; Print screen released, 1 byte left
     jz  .ps_rel1
-    cmp cl, KC_STATE_PAUSE + 7  ; Pause, 7 bytes left
+    cmp bl, KC_STATE_PAUSE + 7  ; Pause, 7 bytes left
     jz  .pause7
-    cmp cl, KC_STATE_PAUSE + 6  ; Pause, 6 bytes left
+    cmp bl, KC_STATE_PAUSE + 6  ; Pause, 6 bytes left
     jz  .pause6
-    cmp cl, KC_STATE_PAUSE + 5  ; Pause, 5 bytes left
+    cmp bl, KC_STATE_PAUSE + 5  ; Pause, 5 bytes left
     jz  .pause5
-    cmp cl, KC_STATE_PAUSE + 4  ; Pause, 4 bytes left
+    cmp bl, KC_STATE_PAUSE + 4  ; Pause, 4 bytes left
     jz  .pause4
-    cmp cl, KC_STATE_PAUSE + 3  ; Pause, 3 bytes left
+    cmp bl, KC_STATE_PAUSE + 3  ; Pause, 3 bytes left
     jz  .pause3
-    cmp cl, KC_STATE_PAUSE + 2  ; Pause, 2 bytes left
+    cmp bl, KC_STATE_PAUSE + 2  ; Pause, 2 bytes left
     jz  .pause2
-    cmp cl, KC_STATE_PAUSE + 1  ; Pause, 1 bytes left
+    cmp bl, KC_STATE_PAUSE + 1  ; Pause, 1 bytes left
     jz  .pause1
 
 .new:                   ; Handle new key
@@ -75,7 +78,7 @@ kb_int:
     cmp al, 0xE1        ; New pause key
     jz  .new_pause
     add al, 0x20        ; New basic key
-    push    ax
+    push    eax
     call    putch
     jmp .done
 .new_e0:                ; Set E0 state
@@ -164,8 +167,5 @@ kb_int:
     jmp .done
 
 .done:
-    mov al, PIC_EOI
-    out PIC_M_CMD, al
-
     popa
     iret
