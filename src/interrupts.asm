@@ -103,8 +103,12 @@ kb_int:
     jmp .done
 
 .ps2:                   ; Handle print screen, 2 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .ps1:                   ; Handle print screen, 1 byte left
+    mov BYTE [keycode.state], KC_STATE_WAIT
+    jmp .done
 
 .rel:                   ; Handle released key
 
