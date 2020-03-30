@@ -124,10 +124,16 @@ kb_int:
     jmp .done
 
 .ps_rel3:               ; Handle released print screen, 3 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .ps_rel2:               ; Handle released print screen, 2 bytes left
+    dec BYTE [keycode.state]
+    jmp .done
 
 .ps_rel1:               ; Handle released print screen, 1 byte left
+    mov BYTE [keycode.state], KC_STATE_WAIT
+    jmp .done
 
 .pause7:                ; Handle pause key, 7 bytes left
 
