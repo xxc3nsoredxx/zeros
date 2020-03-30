@@ -111,6 +111,8 @@ kb_int:
     jmp .done
 
 .rel:                   ; Handle released key
+    mov BYTE [keycode.state], KC_STATE_WAIT
+    jmp .done
 
 .e0_rel:                ; Handle relaeased E0 key
 
