@@ -31,13 +31,13 @@ run:
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
 
-$(OBJ)/interrupts.o: interrupts.asm idt.hs kb.hs
+$(OBJ)/interrupts.o: interrupts.asm idt.hs kb.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kb.o: kb.asm kb.hs
+$(OBJ)/kb.o: kb.asm kb.hs idt.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel0.o: kernel0.asm gdt.hs idt.hs multiboot.hs
+$(OBJ)/kernel0.o: kernel0.asm gdt.hs idt.hs kb.hs multiboot.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/kernel1.o: kernel1.asm vga.hs

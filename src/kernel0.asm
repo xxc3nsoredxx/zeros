@@ -4,6 +4,7 @@
 
 %include    "gdt.hs"
 %include    "idt.hs"
+%include    "kb.hs"
 %include    "multiboot.hs"
 
 global  kstart          ; Make kstart visible
@@ -79,8 +80,7 @@ kstart:
     lidt    [idt_desc]  ; Load the IDT
     sti                 ; Re-enable interrupts
 
-    mov al, 0xFD        ; Enable IRQ 1 (keyboard)
-    out PIC_M_DATA, al
+    call    kb_init     ; Initialize the keyboard
 
     call    kmain       ; Kernel main function
 
