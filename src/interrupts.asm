@@ -3,7 +3,6 @@
 
 %include    "idt.hs"
 %include    "kb.hs"
-; %include    "vga.hs"
 
 section .text
 ; PIC master null handler
@@ -106,8 +105,6 @@ kb_int:
     mov al, KC_MOD_READ     ; Ensure read bit is unset
     not al
     and [keycode.mod], al
-    ; push    eax
-    ; call    putch
     jmp .done
 .caps:
     mov al, [keycode.mod]   ; Toggle caps lock flag
