@@ -59,11 +59,13 @@ extern  SHIFT_TABLE     ; Characters when shift applied
 
 ; Keycode modifiers
 ; Bits:
-;   2-7:    Unused
+;   3-7:    Unused
+;   2:      Read:   0 (unread), 1 (read)
 ;   1:      Caps:   0 (inactive), 1 (active)
 ;   0:      Shift:  0 (inactive), 1 (active)
 %assign KC_MOD_SHIFT    0b00000001
 %assign KC_MOD_CAPS     0b00000010
+%assign KC_MOD_READ     0b00000100
 
 ; Keycode state
 ; 0x00: Waiting for new scan code

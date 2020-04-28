@@ -3,7 +3,7 @@
 
 %include    "idt.hs"
 %include    "kb.hs"
-%include    "vga.hs"
+; %include    "vga.hs"
 
 section .text
 ; PIC master null handler
@@ -79,6 +79,8 @@ kb_int:
     cmp al, 0xE1        ; New pause key
     jz  .new_pause
     movzx   eax, BYTE [SC2_BASIC + eax] ; New basic key
+    cmp al, 0x0A        ; Handle return
+    jz  .save_key
     cmp al, 0x91        ; Handle caps lock
     jz  .caps
     cmp al, 0x92        ; Handle shift
@@ -99,8 +101,13 @@ kb_int:
     jz  .noshift
     movzx   eax, BYTE [SHIFT_TABLE + eax]
 .noshift:
-    push    eax
-    call    putch
+.save_key:
+    mov [keycode.key], al   ; Save the key's value
+    mov al, KC_MOD_READ     ; Ensure read bit is unset
+    not al
+    and [keycode.mod], al
+    ; push    eax
+    ; call    putch
     jmp .done
 .caps:
     mov al, [keycode.mod]   ; Toggle caps lock flag
