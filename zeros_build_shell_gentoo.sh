@@ -44,6 +44,15 @@ else
     echo "Repo $REPO exists"
 fi
 
+# Create the ISO if it doesn't exist
+if [ -a $ISO ]; then
+    echo "ISO exists"
+else
+    echo "Creating ISO of size 1MiB"
+    dd if=/dev/zero of=$ISO bs=1M count=100
+fi
+
+# Create loopback devices if needed
 if [ "$(losetup -j $ISO)" ]; then
     echo "ISO already has loopback devices"
     LOOP1="$(losetup -l -n -O NAME -j $ISO | sort | head -1)"
@@ -56,6 +65,45 @@ else
     losetup $LOOP2 $ISO -o 1048576
 fi
 
+# Install GRUB and create ext2 filesystem if needed
+if [ "$(dd if=$LOOP1 bs=512 count=1 | xxd | grep 'GRUB')" ]; then
+    echo "GRUB already installed on ISO"
+else
+    echo "Creating partition on iso"
+    cat << EOF | fdisk $ISO
+o
+n
+p
+1
+
+
+a
+
+p
+w
+q
+EOF
+    echo "Creating ext2 filesystem on ISO"
+    mkfs.ext2 $LOOP2
+    echo "Mounting ISO at $MOUNT"
+    mount $LOOP2 $MOUNT
+    echo "Installing GRUB on ISO"
+    grub-install --targe=i386-pc --root-directory=$MOUNT --no-floppy \
+        --modules="normal part_msdos ext2 multiboot biosdisk" $LOOP1
+    echo "Creating GRUB config"
+    cat > $MOUNT/boot/grub/grub.cfg << EOF
+menuentry "ZerOS" {
+    multiboot /boot/kernel.bin
+}
+
+EOF
+    echo "Making ISO world rwx"
+    chmod 777 $ISO
+    chmod -R 777 $MOUNT
+    sync
+fi
+
+# Mount ISO if needed
 if [ "$(findmnt -n -o TARGET $LOOP2)" ]; then
     echo "ISO already mounted"
 else
