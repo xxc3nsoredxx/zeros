@@ -7,6 +7,10 @@ REPO="cross-$TARGET"
 REPODIR="/var/db/repos/$REPO"
 REPOSCONF="/etc/portage/repos.conf"
 PORT_LOG="/var/log/portage/$REPO-*.log"
+ISO="zeros.iso"
+MOUNT="/mnt"
+LOOP1=""
+LOOP2=""
 
 # Detect root
 if [ $(id -u) -ne 0 ]; then
@@ -40,4 +44,21 @@ else
     echo "Repo $REPO exists"
 fi
 
+if [ "$(losetup -j $ISO)" ]; then
+    echo "ISO already has loopback devices"
+    LOOP1="$(losetup -l -n -O NAME -j $ISO | sort | head -1)"
+    LOOP2="$(losetup -l -n -O NAME -j $ISO | sort | tail -1)"
+else
+    echo "Creating loopback devices for ISO"
+    LOOP1="$(losetup -f)"
+    losetup $LOOP1 $ISO
+    LOOP2="$(losetup -f)"
+    losetup $LOOP2 $ISO -o 1048576
+fi
 
+if [ "$(findmnt -n -o TARGET $LOOP2)" ]; then
+    echo "ISO already mounted"
+else
+    echo "Mounting ISO at $MOUNT"
+    mount $LOOP2 $MOUNT
+fi
