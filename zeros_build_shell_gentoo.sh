@@ -48,7 +48,7 @@ fi
 if [ -a $ISO ]; then
     echo "ISO exists"
 else
-    echo "Creating ISO of size 1MiB"
+    echo "Creating image of size 100MiB"
     dd if=/dev/zero of=$ISO bs=1M count=100
 fi
 
