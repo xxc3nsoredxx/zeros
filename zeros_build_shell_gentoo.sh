@@ -88,7 +88,7 @@ EOF
     echo "Mounting ISO at $MOUNT"
     mount $LOOP2 $MOUNT
     echo "Installing GRUB on ISO"
-    grub-install --targe=i386-pc --root-directory=$MOUNT --no-floppy \
+    grub-install --target=i386-pc --root-directory=$MOUNT --no-floppy \
         --modules="normal part_msdos ext2 multiboot biosdisk" $LOOP1
     echo "Creating GRUB config"
     cat > $MOUNT/boot/grub/grub.cfg << EOF
