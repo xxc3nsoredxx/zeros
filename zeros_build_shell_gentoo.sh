@@ -1,7 +1,7 @@
 #!/bin/bash
 
-BINVERSION="2.32-r1"
-GCCVERSION="9.2.0-r2"
+BINVERSION=$(equery -q l binutils | awk -e 'BEGIN{FS="-"} {printf "%s-%s", $3, $4}')
+# GCCVERSION="9.2.0-r2"
 TARGET="i386-elf"
 REPO="cross-$TARGET"
 REPODIR="/var/db/repos/$REPO"
@@ -25,7 +25,7 @@ fi
 if [ ! -d $REPODIR ]; then
     echo "Repo $REPO doesn't exist, creating..."
     mkdir -p $REPODIR/{profiles,metadata}
-    echo "cross-$TARGET" > $REPODIR/profiles/repo_name
+    echo "$REPO" > $REPODIR/profiles/repo_name
     echo 'masters = gentoo' > $REPODIR/metadata/layout.conf
     echo "[$REPO]" > $REPOSCONF/$REPO.conf
     echo "location = $REPODIR" >> $REPOSCONF/$REPO.conf
@@ -37,8 +37,10 @@ if [ ! -d $REPODIR ]; then
     # Create the cross-compiler
     echo "Creating cross-compiler for $TARGET..."
     echo "binutils version: $BINVERSION"
-    echo "GCC version: $GCCVERSION"
-    crossdev --stage1 --binutils $BINVERSION --gcc $GCCVERSION \
+    # echo "GCC version: $GCCVERSION"
+    # crossdev --stage1 --binutils $BINVERSION --gcc $GCCVERSION \
+    #     --target $TARGET --portage -a --portage -v
+    crossdev --stage0 --binutils $BINVERSION \
         --target $TARGET --portage -a --portage -v
 else
     echo "Repo $REPO exists"
