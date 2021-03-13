@@ -72,19 +72,7 @@ if [ "$(dd if=$LOOP1 bs=512 count=1 | xxd | grep 'GRUB')" ]; then
     echo "GRUB already installed on ISO"
 else
     echo "Creating partition on iso"
-    cat << EOF | fdisk $ISO
-o
-n
-p
-1
-
-
-a
-
-p
-w
-q
-EOF
+    sfdisk $ISO < zeros.sfdisk
     echo "Creating ext2 filesystem on ISO"
     mkfs.ext2 $LOOP2
     echo "Mounting ISO at $MOUNT"

@@ -7,12 +7,13 @@ SRC = src
 INC = include
 OBJ = obj
 BIN = bin
+MOUNT = /mnt
 AS = nasm
 AFLAGS = -f elf32 -w+all -w+error -w-unknown-warning -i $(INC)/
 LD = i386-elf-ld
 LFLAGS = -M --fatal-warnings
 QEMU = qemu-system-i386
-QFLAGS = -drive file=zeros.iso,format=raw
+QFLAGS = -curses -drive file=zeros.iso,format=raw
 OBJS = interrupts.o kb.o kernel0.o kernel1.o vga.o
 
 .PHONY: all relink install run
@@ -22,7 +23,7 @@ relink:
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $(OBJS) -o $(BIN)/kernel.bin
 
 install: all
-	cp $(BIN)/kernel.bin /mnt/boot/
+	cp $(BIN)/kernel.bin $(MOUNT)/boot/
 	sync
 
 run:
