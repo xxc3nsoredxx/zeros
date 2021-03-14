@@ -5,23 +5,23 @@
 %include    "idt.hs"
 
 section .text
-; void kb_init ()
+; void kb_init (void)
 ; Initializes the keyboard (called only in kernel0)
 kb_init:
-.loop:                  ; Disable PS/2 port 1
+.loop:                      ; Disable PS/2 port 1
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
     jnz .loop
     mov al, PS2_DIS_1
     out PS2_CMD, al
-.loop2:                 ; Disable PS/2 port 2
+.loop2:                     ; Disable PS/2 port 2
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
     jnz .loop2
     mov al, PS2_DIS_2
     out PS2_CMD, al
-    in  al, PS2_DATA    ; Flush output
-.loop3:                 ; Read configuration byte
+    in  al, PS2_DATA        ; Flush output
+.loop3:                     ; Read configuration byte
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
     jnz .loop3
@@ -33,7 +33,7 @@ kb_init:
     jz  .loop4
     in  al, PS2_DATA
     and al, PS2_CONF_MASK   ; Set conf byte
-    push    ax
+    push ax
 .loop5:
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
@@ -46,19 +46,19 @@ kb_init:
     jnz .loop6
     pop ax
     out PS2_DATA, al
-.loop7:                 ; Enable port 1
+.loop7:                     ; Enable port 1
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
     jnz .loop7
     mov al, PS2_EN_1
     out PS2_CMD, al
-.loop8:                 ; Enable port 2
+.loop8:                     ; Enable port 2
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
     jnz .loop8
     mov al, PS2_EN_2
     out PS2_CMD, al
-.loop9:                 ; Read configuration byte
+.loop9:                     ; Read configuration byte
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
     jnz .loop9
@@ -70,7 +70,7 @@ kb_init:
     jz  .loop10
     in  al, PS2_DATA
     or  al, PS2_CONF_MASK2  ; Set conf byte (enable port interrupts)
-    push    ax
+    push ax
 .loop11:
     in  al, PS2_STAT
     and al, PS2_STAT_INPUT
@@ -84,12 +84,12 @@ kb_init:
     pop ax
     out PS2_DATA, al
 
-    mov al, 0xFD        ; Enable IRQ 1 (keyboard)
+    mov al, 0xFD            ; Enable IRQ 1 (keyboard)
     out PIC_M_DATA, al
     ret
 
 section .rodata
-SC2_BASIC:              ; Basic keys
+SC2_BASIC:                  ; Basic keys
     db  0, 0x89, 0, 0x85        ; n/a       F9      n/a     F5
     db  0x83, 0x81, 0x82, 0x8C  ; F3        F1      F2      F12
     db  0, 0x8A, 0x88, 0x6      ; n/a       F10     F8      F6
@@ -124,35 +124,35 @@ SC2_BASIC:              ; Basic keys
     db  0, 0, 0, 0              ; NUM *     NUM 9   ScrLock n/a
     db  0, 0, 0, 0x87           ; n/a       n/a     n/a     F7
 SHIFT_TABLE:
-    times 0x27  db 0
+    times 0x27  db  0
     db  '"'
-    times 4 db 0
+    times 4     db  0
     db  '<_>?)!@#$%^&*('
     db  0
     db  ':'
     db  0
     db  '+'
-    times 3 db 0
+    times 3     db  0
     db  'abcdefghijklmnopqrstuvwxyz{|}'
-    times 2 db 0
+    times 2     db  0
     db  '~ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 section .bss
 keycode:
-.mod:                   ; Modifiers active
-    resb    1
-.key:                   ; Pressed key (non-modifier)
-    resb    1           ; ASCII code:
-                        ;   Letters     (lowercase, 0x61 to 0x7A)
-                        ;   Numbers     (0x30 to 0x39, shift for !@#$%^&*())
-                        ;   `-=[]\;',./ (0x27, 2C-2F, 3B, 3D, 5B-5D, 60)
-                        ;               (shift for ~_+{}|:">?)
-                        ;   Newline     (0x0A, return)
-                        ;   Space       (0x20, space bar)
-                        ;   Tab         (0x09, tab)
-                        ;   Backspace   (0x08)
-                        ; 0x81 to 0x8C  F1 to F12
-                        ; 0             Unused
-                        ; 0x90 to 0x9D  Esc to R-Shift
-.state:                 ; Current state
-    resb    1
+.mod:                       ; Modifiers active
+    resb 1
+.key:                       ; Pressed key (non-modifier)
+    resb 1                  ; ASCII code:
+                            ;   Letters     (lowercase, 0x61 to 0x7A)
+                            ;   Numbers     (0x30 to 0x39, shift for !@#$%^&*())
+                            ;   `-=[]\;',./ (0x27, 2C-2F, 3B, 3D, 5B-5D, 60)
+                            ;               (shift for ~_+{}|:">?)
+                            ;   Newline     (0x0A, return)
+                            ;   Space       (0x20, space bar)
+                            ;   Tab         (0x09, tab)
+                            ;   Backspace   (0x08)
+                            ; 0x81 to 0x8C  F1 to F12
+                            ; 0             Unused
+                            ; 0x90 to 0x9D  Esc to R-Shift
+.state:                     ; Current state
+    resb 1

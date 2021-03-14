@@ -4,15 +4,15 @@
 %include    "vga.hs"
 
 section .text
-; u32 getpos ()
+; u32 getpos (void)
 ; Returns the current x/y pos as address in VRAM
 getpos:
-    push    ebp
+    push ebp
     mov ebp, esp
-    push    ebx
+    push ebx
 
-    movzx   eax, BYTE [cury]
-    movzx   ebx, BYTE [curx]
+    movzx eax, BYTE [cury]
+    movzx ebx, BYTE [curx]
     mul BYTE [COLS]
     add eax, ebx
     add eax, eax
@@ -22,28 +22,28 @@ getpos:
     pop ebp
     ret
 
-; void clear ()
+; void clear (void)
 ; Clears the screen and moves cursor to top left
 clear:
-    push    ebp
+    push ebp
     mov ebp, esp
-    push    edi
-    push    esi
-    push    es
+    push edi
+    push esi
+    push es
 
-    mov ax, gs          ; Set es to point to VRAM
+    mov ax, gs              ; Set es to point to VRAM
     mov es, ax
 
-    mov esi, .blanks    ; Write ' ' on all locations 2 chars at a time
+    mov esi, .blanks        ; Write ' ' on all locations 2 chars at a time
     mov edi, 0
-    movzx   eax, BYTE [ROWS]
+    movzx eax, BYTE [ROWS]
     mul BYTE [COLS]
     shr ecx, 1
     mov ecx, eax
 .loop:
     movsd
     sub esi, 4
-    loop    .loop
+    loop .loop
 
     mov BYTE [curx], 0
     mov BYTE [cury], 0
@@ -57,40 +57,40 @@ clear:
 .blanks:
     dd  0x200A200A
 
-; void scroll ()
+; void scroll (void)
 ; Scroll the screen 1 line and move cursor to bottom left
 scroll:
-    push    ebp
+    push ebp
     mov ebp, esp
-    push    edi
-    push    esi
-    push    es
+    push edi
+    push esi
+    push es
 
     mov ax, gs
     mov es, ax
 
-    mov edi, 0          ; Start of first row
-    mov esi, 0          ; Start of second row
-    movzx   eax, BYTE [COLS]
+    mov edi, 0              ; Start of first row
+    mov esi, 0              ; Start of second row
+    movzx eax, BYTE [COLS]
     add eax, eax
     add esi, eax
-    movzx   ecx, BYTE [ROWS]    ; Total chars for all but one row
+    movzx ecx, BYTE [ROWS]  ; Total chars for all but one row
     dec ecx
-    movzx   eax, BYTE [COLS]
+    movzx eax, BYTE [COLS]
     mul ecx
     mov ecx, eax
-    gs rep movsw           ; Move everything one row up
+    gs rep movsw            ; Move everything one row up
 
-    add eax, eax        ; Start of last row
-    movzx   ecx, BYTE [COLS]
+    add eax, eax            ; Start of last row
+    movzx ecx, BYTE [COLS]
 .loop:
     dec ecx
     mov WORD [gs:eax + 2 * ecx], 0x0A20
     inc ecx
-    loop    .loop
+    loop .loop
 
-    mov BYTE [curx], 0  ; Save ROWS - 1, 0 as the pos
-    movzx   eax, BYTE [ROWS]
+    mov BYTE [curx], 0      ; Save ROWS - 1, 0 as the pos
+    movzx eax, BYTE [ROWS]
     dec eax
     mov BYTE [cury], al
 
@@ -104,79 +104,79 @@ scroll:
 ; void puts (char *str, int len)
 ; Print a string of length len on the screen
 puts:
-    push    ebp
+    push ebp
     mov ebp, esp
-    push    ebx
-    push    edi
-    push    esi
-    push    es
+    push ebx
+    push edi
+    push esi
+    push es
 
     mov ax, gs
     mov es, ax
 
-    mov ecx, [ebp + 12] ; Length of the string
+    mov ecx, [ebp + 12]     ; Length of the string
     cmp ecx, 0
-    jz  .done           ; Skip all if zero length
-    mov esi, [ebp + 8]  ; Address of the first character
-    call    getpos      ; Get the current pos
+    jz  .done               ; Skip all if zero length
+    mov esi, [ebp + 8]      ; Address of the first character
+    call getpos             ; Get the current pos
     mov edi, eax
-    movzx   ebx, BYTE [COLOR]
+    movzx ebx, BYTE [COLOR]
 
 .print:
     cmp BYTE [esi], 0x0A    ; Line feed
     je  .lf
     cmp BYTE [esi], 0x0D    ; Carriage return
     je  .cr
-    movsb               ; Regular char
-    mov BYTE [gs:edi], bl  ; Color
+    movsb                   ; Regular char
+    mov BYTE [gs:edi], bl   ; Color
     inc edi
-    movzx   eax, BYTE [curx]
+    movzx eax, BYTE [curx]
     inc eax
-    cmp al, BYTE [COLS] ; Test for word wrap
+    cmp al, BYTE [COLS]     ; Test for word wrap
     jne .nowrap
     mov BYTE [curx], 0
-    movzx   eax, BYTE [cury]
+    movzx eax, BYTE [cury]
     inc eax
-    cmp al, BYTE [ROWS] ; Test for wrap scroll
+    cmp al, BYTE [ROWS]     ; Test for wrap scroll
     jne .nowrapscroll
-    push    ecx
-    call    scroll
+    push ecx
+    call scroll
     pop ecx
-    call    getpos
+    call getpos
     mov edi, eax
-    loop    .print
+    loop .print
     jmp .done
 .nowrap:
     mov [curx], al
-    loop    .print
+    loop .print
     jmp .done
 .nowrapscroll:
     mov [cury], al
-    loop    .print
+    loop .print
     jmp .done
 .lf:
-    movzx   eax, BYTE [cury]    ; Go down a line
+    movzx eax, BYTE [cury]  ; Go down a line
     inc eax
     cmp al, [ROWS]
     jne .noscroll
-    push    ecx
-    call    scroll
+    push ecx
+    call scroll
     pop ecx
     jmp .skip
 .noscroll:
     mov [cury], al
 .skip:
-    call    getpos
+    call getpos
     mov edi, eax
     inc esi
-    loop    .print_jmp
+    loop .print_jmp
     jmp .done
 .cr:
-    mov BYTE [curx], 0  ; Go to start of line
-    call    getpos
+    mov BYTE [curx], 0      ; Go to start of line
+    call getpos
     mov edi, eax
     inc esi
-    loop    .print_jmp
+    loop .print_jmp
 .done:
     pop es
     pop esi
@@ -191,39 +191,39 @@ puts:
 ; void putch (char c)
 ; Prints a single character on the screem
 putch:
-    push    ebp
+    push ebp
     mov ebp, esp
-    push    ebx
+    push ebx
 
-    mov bl, [ebp + 8]   ; Build the letter+attribute into BX
-    cmp bl, 0x0D        ; Test carriage return
+    mov bl, [ebp + 8]       ; Build the letter+attribute into BX
+    cmp bl, 0x0D            ; Test carriage return
     jz  .cr
-    cmp bl, 0x0A        ; Test newline
+    cmp bl, 0x0A            ; Test newline
     jz  .nl
     mov bh, [COLOR]
-    push    eax
-    call    getpos
+    push eax
+    call getpos
     mov WORD [gs:eax], bx   ; Write to screen
     pop eax
     inc BYTE [curx]
-    mov bl, [COLS]      ; Test word wrap
+    mov bl, [COLS]          ; Test word wrap
     cmp [curx], bl
     jz  .wrap
     jmp .done
-.cr:                    ; Handle carriage return
+.cr:                        ; Handle carriage return
     mov BYTE [curx], 0
     jmp .done
-.nl:                    ; Handle newline
+.nl:                        ; Handle newline
     inc BYTE [cury]
     jmp .testscroll
-.wrap:                  ; Handle word wrap
+.wrap:                      ; Handle word wrap
     inc BYTE [cury]
     mov BYTE [curx], 0
 .testscroll:
-    mov bl, [ROWS]      ; Test scroll
+    mov bl, [ROWS]          ; Test scroll
     cmp [cury], bl
     jnz .done
-    call    scroll
+    call scroll
 .done:
     pop ebx
     mov esp, ebp
@@ -231,15 +231,15 @@ putch:
     ret 4
 
 section .data
-curx:                   ; Current cursor x
+curx:                       ; Current cursor x
     db  0
-cury:                   ; Current cursor y
+cury:                       ; Current cursor y
     db  0
 
 section .rodata
-ROWS:                   ; Number of rows on screen
+ROWS:                       ; Number of rows on screen
     db  25
-COLS:                   ; Number of cols
+COLS:                       ; Number of cols
     db  80
-COLOR:                  ; Light green on black
+COLOR:                      ; Light green on black
     db  0x0A

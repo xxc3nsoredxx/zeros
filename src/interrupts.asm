@@ -8,7 +8,7 @@ section .text
 ; PIC master null handler
 master_null:
     pusha
-    mov al, PIC_EOI     ; Send EOI to PIC
+    mov al, PIC_EOI         ; Send EOI to PIC
     out PIC_M_CMD, al
     popa
     iret
@@ -35,11 +35,11 @@ kb_int:
     mov al, PIC_EOI
     out PIC_M_CMD, al
 
-    in  al, PS2_DATA    ; Get the scancode
+    in  al, PS2_DATA        ; Get the scancode
     mov bl, [keycode.state] ; Get the current state
     cmp bl, KC_STATE_WAIT   ; New key
     jz  .new
-    cmp bl, KC_STATE_E0 ; E0 key
+    cmp bl, KC_STATE_E0     ; E0 key
     jz  .e0
     cmp bl, KC_STATE_PS + 2 ; Print screen, 2 bytes left
     jz  .ps2
@@ -70,35 +70,35 @@ kb_int:
     cmp bl, KC_STATE_PAUSE + 1  ; Pause, 1 bytes left
     jz  .pause1
 
-.new:                   ; Handle new key
-    cmp al, 0xE0        ; New E0 key
+.new:                       ; Handle new key
+    cmp al, 0xE0            ; New E0 key
     jz  .new_e0
-    cmp al, 0xF0        ; New released key
+    cmp al, 0xF0            ; New released key
     jz  .new_rel
-    cmp al, 0xE1        ; New pause key
+    cmp al, 0xE1            ; New pause key
     jz  .new_pause
-    movzx   eax, BYTE [SC2_BASIC + eax] ; New basic key
-    cmp al, 0x0A        ; Handle return
+    movzx eax, BYTE [SC2_BASIC + eax]   ; New basic key
+    cmp al, 0x0A            ; Handle return
     jz  .save_key
-    cmp al, 0x91        ; Handle caps lock
+    cmp al, 0x91            ; Handle caps lock
     jz  .caps
-    cmp al, 0x92        ; Handle shift
+    cmp al, 0x92            ; Handle shift
     jz  .shift
     cmp al, 0x9D
     jz  .shift
     mov bl, [keycode.mod]   ; If caps, do uppercase
     and bl, KC_MOD_CAPS
     jz  .nocaps
-    cmp al, 'a'         ; Test if letter
+    cmp al, 'a'             ; Test if letter
     jb  .nocaps
     cmp al, 'z'
     ja  .nocaps
-    movzx   eax, BYTE [SHIFT_TABLE + eax]
+    movzx eax, BYTE [SHIFT_TABLE + eax]
 .nocaps:
     mov bl, [keycode.mod]   ; Test for shift
     and bl, KC_MOD_SHIFT
     jz  .noshift
-    movzx   eax, BYTE [SHIFT_TABLE + eax]
+    movzx eax, BYTE [SHIFT_TABLE + eax]
 .noshift:
 .save_key:
     mov [keycode.key], al   ; Save the key's value
@@ -116,99 +116,99 @@ kb_int:
     or  al, KC_MOD_SHIFT
     mov [keycode.mod], al
     jmp .done
-.new_e0:                ; Set E0 state
+.new_e0:                    ; Set E0 state
     mov BYTE [keycode.state], KC_STATE_E0
     jmp .done
-.new_rel:               ; Set release state
+.new_rel:                   ; Set release state
     mov BYTE [keycode.state], KC_STATE_REL
     jmp .done
-.new_pause:             ; Set pause state, 7 bytes left
+.new_pause:                 ; Set pause state, 7 bytes left
     mov BYTE [keycode.state], KC_STATE_PAUSE + 7
     jmp .done
 
-.e0:                    ; Handle new E0 keys
-    cmp al, 0x12        ; New print screen key
+.e0:                        ; Handle new E0 keys
+    cmp al, 0x12            ; New print screen key
     jz  .new_ps
-    cmp al, 0xF0        ; E0 key released
+    cmp al, 0xF0            ; E0 key released
     jz  .new_e0_rel
     mov BYTE [keycode.state], KC_STATE_WAIT ; Basic E0 key (currently ignored)
     jmp .done
-.new_ps:                ; Set print screen 2 bytes left state
+.new_ps:                    ; Set print screen 2 bytes left state
     mov BYTE [keycode.state], KC_STATE_PS + 2
     jmp .done
-.new_e0_rel:            ; Set E0 released state
+.new_e0_rel:                ; Set E0 released state
     mov BYTE [keycode.state], KC_STATE_E0_REL
     jmp .done
 
-.ps2:                   ; Handle print screen, 2 bytes left
+.ps2:                       ; Handle print screen, 2 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.ps1:                   ; Handle print screen, 1 byte left
+.ps1:                       ; Handle print screen, 1 byte left
     mov BYTE [keycode.state], KC_STATE_WAIT
     jmp .done
 
-.rel:                   ; Handle released key
+.rel:                       ; Handle released key
     mov al, [SC2_BASIC + eax]   ; Get basic key
-    cmp al, 0x92        ; Handle shift
+    cmp al, 0x92            ; Handle shift
     jz  .shift_rel
     cmp al, 0x9D
     jz  .shift_rel
     mov BYTE [keycode.state], KC_STATE_WAIT
     jmp .done
-.shift_rel:             ; Handle released shift
+.shift_rel:                 ; Handle released shift
     mov al, [keycode.mod]   ; Clear shift flag
     and al, ~KC_MOD_SHIFT
     mov [keycode.mod], al
     mov BYTE [keycode.state], KC_STATE_WAIT
     jmp .done
 
-.e0_rel:                ; Handle relaeased E0 key
-    cmp al, 0x7C        ; Print screen released
+.e0_rel:                    ; Handle relaeased E0 key
+    cmp al, 0x7C            ; Print screen released
     jz  .new_ps_rel
     mov BYTE [keycode.state], KC_STATE_WAIT
     jmp .done
-.new_ps_rel:            ; Set print screen released 3 bytes left state
+.new_ps_rel:                ; Set print screen released 3 bytes left state
     mov BYTE [keycode.state], KC_STATE_PS_REL + 3
     jmp .done
 
-.ps_rel3:               ; Handle released print screen, 3 bytes left
+.ps_rel3:                   ; Handle released print screen, 3 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.ps_rel2:               ; Handle released print screen, 2 bytes left
+.ps_rel2:                   ; Handle released print screen, 2 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.ps_rel1:               ; Handle released print screen, 1 byte left
+.ps_rel1:                   ; Handle released print screen, 1 byte left
     mov BYTE [keycode.state], KC_STATE_WAIT
     jmp .done
 
-.pause7:                ; Handle pause key, 7 bytes left
+.pause7:                    ; Handle pause key, 7 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.pause6:                ; Handle pause key, 6 bytes left
+.pause6:                    ; Handle pause key, 6 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.pause5:                ; Handle pause key, 5 bytes left
+.pause5:                    ; Handle pause key, 5 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.pause4:                ; Handle pause key, 4 bytes left
+.pause4:                    ; Handle pause key, 4 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.pause3:                ; Handle pause key, 3 bytes left
+.pause3:                    ; Handle pause key, 3 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.pause2:                ; Handle pause key, 2 bytes left
+.pause2:                    ; Handle pause key, 2 bytes left
     dec BYTE [keycode.state]
     jmp .done
 
-.pause1:                ; Handle pause key, 1 byte left
+.pause1:                    ; Handle pause key, 1 byte left
     mov BYTE [keycode.state], KC_STATE_WAIT
     jmp .done
 
