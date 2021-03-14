@@ -5,31 +5,31 @@ extern  master_null
 extern  slave_null
 extern  kb_int
 
-struc idt_entry_t
-    .off_bot:   resw 1  ; Bottom word of routine's offset (ie pointer)
+struc   idt_entry_t
+    .off_bot:   resw 1      ; Bottom word of routine's offset (ie pointer)
         alignb  2
-    .selector:  resw 1  ; Selector in GDT/LDT with interrupt routine
-        alignb  2       ; Ring level of selector has to be zero for iret
-                        ; to not throw a general protection fault
-    .zero:  resb 1      ; Unused, set to zero
+    .selector:  resw 1      ; Selector in GDT/LDT with interrupt routine
+        alignb  2           ; Ring level of selector has to be zero for iret
+                            ; to not throw a general protection fault
+    .zero:      resb 1      ; Unused, set to zero
         alignb  1
-    .type_attr: resb 1  ; Type and attributes
-        alignb  1       ; 7:    Present: set to 0 for unused interrupts
-                        ; 5-6:  Caller minimum ring level
-                        ; 4:    Storage: set to 0 for interrupt and trap gate
-                        ; 0-3:  Gate type:  5:  32 bit task gate
-                        ;                   6:  16 bit interrupt gate
-                        ;                   7:  16 bit trap gate
-                        ;                   14: 32 bit interrupt gate
-                        ;                   15: 32 bit trap gate
-    .off_top:   resw 1  ; Top word of offset
+    .type_attr: resb 1      ; Type and attributes
+        alignb  1           ; 7:    Present: set to 0 for unused interrupts
+                            ; 5-6:  Caller minimum ring level
+                            ; 4:    Storage: set to 0 for interrupt and trap gate
+                            ; 0-3:  Gate type:  5:  32 bit task gate
+                            ;                   6:  16 bit interrupt gate
+                            ;                   7:  16 bit trap gate
+                            ;                   14: 32 bit interrupt gate
+                            ;                   15: 32 bit trap gate
+    .off_top:   resw 1      ; Top word of offset
         alignb  2
 endstruc
 
-struc idt_desc_t
-    .size:  resw 1      ; Size of IDT - 1
+struc   idt_desc_t
+    .size:  resw 1          ; Size of IDT - 1
         alignb  2
-    .idt:   resd 1      ; Address of IDT
+    .idt:   resd 1          ; Address of IDT
         alignb  4
 endstruc
 

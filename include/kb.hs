@@ -1,12 +1,12 @@
 %ifndef KB_HS_20200327_182505
 %define KB_HS_20200327_182505
 
-extern  kb_init         ; Keyboard initialization
-extern  keycode.mod     ; The most recent keypress (modifier byte)
-extern  keycode.key     ; The most recent keypress (value byte)
-extern  keycode.state   ; The most recent keypress (state of scan code parse)
-extern  SC2_BASIC       ; Keymap for scan code 2 basic keys
-extern  SHIFT_TABLE     ; Characters when shift applied
+extern  kb_init             ; Keyboard initialization
+extern  keycode.mod         ; The most recent keypress (modifier byte)
+extern  keycode.key         ; The most recent keypress (value byte)
+extern  keycode.state       ; The most recent keypress (state of scan code parse)
+extern  SC2_BASIC           ; Keymap for scan code 2 basic keys
+extern  SHIFT_TABLE         ; Characters when shift applied
 
 ; PS/2 I/O ports
 %assign PS2_DATA    0x60    ; Data port (r/w)
@@ -14,7 +14,7 @@ extern  SHIFT_TABLE     ; Characters when shift applied
 %assign PS2_CMD     0x64    ; Command port (w)
 
 ; Keyboard I/O ports
-%assign KB_CMD  0x60    ; Keyboard command port (r/w)
+%assign KB_CMD      0x60    ; Keyboard command port (r/w)
 
 ; Commands
 %assign PS2_DIS_1       0xAD    ; Disable port 1
@@ -25,7 +25,7 @@ extern  SHIFT_TABLE     ; Characters when shift applied
 %assign PS2_WRITE_CONF  0x60    ; Write configuration byte
 
 ; Keyboard response
-%assign KB_ACK  0xFA    ; Keyboard ACK
+%assign KB_ACK      0xFA    ; Keyboard ACK
 
 ; Status byte flags bits
 ; 7:    Parity error: 0 (no error), 1 (error)
