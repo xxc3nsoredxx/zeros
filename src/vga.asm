@@ -1,7 +1,7 @@
     ; VGA/Screen related functions and constants
     bits    32
 
-%include    "vga.hs"
+%include "vga.hs"
 
 section .text
 ; u32 getpos (void)
@@ -155,6 +155,8 @@ puts:
     loop .print
     jmp .done
 .lf:
+.cr:
+    mov BYTE [curx], 0      ; Go to start of line
     movzx eax, BYTE [cury]  ; Go down a line
     inc eax
     cmp al, [ROWS]
@@ -166,13 +168,6 @@ puts:
 .noscroll:
     mov [cury], al
 .skip:
-    call getpos
-    mov edi, eax
-    inc esi
-    loop .print_jmp
-    jmp .done
-.cr:
-    mov BYTE [curx], 0      ; Go to start of line
     call getpos
     mov edi, eax
     inc esi
