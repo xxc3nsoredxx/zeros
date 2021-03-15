@@ -2,7 +2,6 @@
     bits    32
 
 %include "sys.hs"
-%include "vga.hs"
 
 section .text
     global  kmain           ; Make kmain visible
