@@ -40,8 +40,11 @@ if [ ! -d $REPODIR ]; then
     # echo "GCC version: $GCCVERSION"
     # crossdev --stage1 --binutils $BINVERSION --gcc $GCCVERSION \
     #     --target $TARGET --portage -a --portage -v
-    crossdev --stage0 --binutils $BINVERSION \
-        --target $TARGET --portage -a --portage -v
+    crossdev    --target $TARGET \
+                --stage0 --binutils $BINVERSION \
+                --ex-gdb \
+                --denv 'USE="xml"' \
+                --portage -a --portage -v
 else
     echo "Repo $REPO exists"
 fi
