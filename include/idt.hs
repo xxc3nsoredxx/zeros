@@ -1,9 +1,10 @@
 %ifndef IDT_HS_20200327_065700
 %define IDT_HS_20200327_065700
 
-extern  master_null
-extern  slave_null
-extern  kb_int
+extern _mem_base
+extern master_null
+extern slave_null
+extern kb_int
 
 struc   idt_entry_t
     .off_bot:   resw 1      ; Bottom word of routine's offset (ie pointer)

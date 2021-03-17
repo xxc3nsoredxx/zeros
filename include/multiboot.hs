@@ -2,10 +2,11 @@
 %define MULTIBOOT_HS_20200318_233525
 
 ; helper symbols defined by the linker
-extern  _mb_load_addr       ; Multiboot code + data load start address
-extern  _mb_load_end_addr   ; Multiboot code + data load ends address
-extern  _mb_bss_end_addr    ; Multiboot bss (+stack) end address
-extern  _mb_entry_addr      ; .text section's load address
+extern _mb_header_addr      ; Multiboot header physical address
+extern _mb_load_addr        ; Multiboot code + data physical start address
+extern _mb_load_end_addr    ; Multiboot code + data physical ends address
+extern _mb_bss_end_addr     ; Multiboot bss (+stack) physical end address
+extern _mb_entry_addr       ; Multiboot entry (.text section physical address)
 
 ; Multiboot header structure, 4 byte aligned
 struc   mb_header_t

@@ -10,3 +10,5 @@
 *.swo
 *.tmp
 *.vim
+
+*.gdb_history

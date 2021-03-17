@@ -11,10 +11,13 @@ global  kstart              ; Make kstart visible
 extern  kmain               ; kmain defined in kernel1.asm
 
 section .text
-; Kernel entry poin
+; Kernel entry point
 kstart:
     cli                     ; Disable interrupts
-    lgdt [gdt_desc]         ; Load the GDT
+    ; The data segment is not set yet, need to manually correct the address
+    lea ecx, [gdt_desc - gdt]
+    add ecx, _gdt_start
+    lgdt [ecx]         ; Load the GDT
     jmp GDT_CODE_INDEX:.reload_seg  ; The jump reloads CS
 .reload_seg:
     mov ax, GDT_STACK_INDEX ; Set the stack segment
@@ -26,7 +29,7 @@ kstart:
     mov fs, ax
     mov ax, GDT_VRAM_INDEX  ; Save the VRAM segment in GS
     mov gs, ax
-    
+
     ; Reprogram the PIC to use interrupts 0x20 to 0x2F as to not interfere
     ; with hardware interrupts 0 to 31
     mov al, PIC_INIT | PIC_ICW1_4   ; ICW1: init and tell PIC ICW4 is provided
@@ -130,7 +133,7 @@ gdt:                        ; The start of the GDT
 gdt_desc:                   ; GDT descriptor
     istruc  gdt_desc_t
         at gdt_desc_t.size,     dw gdt.end - gdt - 1
-        at gdt_desc_t.gdt,      dd gdt
+        at gdt_desc_t.gdt,      dd _gdt_start
     iend
 
 section .idt progbits alloc noexec nowrite align=4
@@ -204,7 +207,7 @@ mb_header:
         at mb_header_t.magic,           dd MB_MAGIC
         at mb_header_t.flags,           dd MB_FLAGS
         at mb_header_t.check,           dd -(MB_MAGIC + MB_FLAGS)
-        at mb_header_t.header_addr,     dd mb_header
+        at mb_header_t.header_addr,     dd _mb_header_addr
         at mb_header_t.load_addr,       dd _mb_load_addr
         at mb_header_t.load_end_addr,   dd _mb_load_end_addr
         at mb_header_t.bss_end_addr,    dd _mb_bss_end_addr

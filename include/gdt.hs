@@ -1,7 +1,7 @@
 %ifndef GDT_HS_20200318_232100
 %define GDT_HS_20200318_232100
 
-extern  _mem_base
+extern _gdt_start
 
 struc   gdt_entry_t
     .limit_bot: resw 1      ; Bottom word of segment limit

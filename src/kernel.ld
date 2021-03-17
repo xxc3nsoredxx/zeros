@@ -2,22 +2,25 @@ OUTPUT_FORMAT(binary)
 
 SECTIONS
 {
-    /* Address where the text + data segments start */
-    _mb_load_addr = .;
-    /**
-     * kernel0/kstart is the entry point and also the very first bytes
-     * of the .text section
-     */
-    _mb_entry_addr = LOADADDR(.text);
+    /* OS stuff starts at virtual address 9 MiB */
+    _mem_base = 0x00900000;
+    /* Address where the multiboot header is to be loaded to */
+    _mb_header_addr = _mem_base - SIZEOF(.multiboot);
+    /* Address where the (gdt + idt +) text + data segments start */
+    _mb_load_addr = _mb_header_addr;
     /* Address of code + data end */
-    _mb_load_end_addr = LOADADDR(.data) + SIZEOF(.data);
+    _mb_load_end_addr = _mb_load_addr + LOADADDR(.data) + SIZEOF(.data);
     /**
      * End of the .bss section
      * If the .bss section is empty, set the end address to zero, signaling
      * no .bss to multiboot
      */
-    _mb_bss_end_addr = MIN(1, SIZEOF(.bss)) * LOADADDR(.bss) + SIZEOF(.bss);
-    _mem_base = 0x00900000;
+    _mb_bss_end_addr = MIN(1, SIZEOF(.bss)) * (_mb_load_addr + LOADADDR(.bss)) + SIZEOF(.bss);
+    /**
+     * kernel0/kstart is the entry point and also the very first bytes
+     * of the .text section
+     */
+    _mb_entry_addr = _mb_load_addr + LOADADDR(.text);
 
     /**
      * Multiboot header is at the front of the image
@@ -28,11 +31,10 @@ SECTIONS
         *kernel0.o (.multiboot)
     } =0x00
 
-    /* Align it to 4KiB boundaries, start at 9MiB */
-    . = _mem_base;
     /* Load GDT before code */
     .gdt ALIGN(4) :
     {
+        _gdt_start = _mb_load_addr + .;
         *kernel0.o (.gdt)
     } =0x00
 

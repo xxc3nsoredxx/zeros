@@ -19,8 +19,8 @@ OBJS = interrupts.o kb.o kernel0.o kernel1.o sys.o vga.o
 .PHONY: all relink install run
 all: kernel.bin
 
-relink:
-	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $(OBJS) -o $(BIN)/kernel.bin
+relink: $(OBJS)
+	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $(BIN)/kernel.bin
 
 install: all
 	cp $(BIN)/kernel.bin $(MOUNT)/boot/
@@ -28,6 +28,9 @@ install: all
 
 run:
 	$(QEMU) $(QFLAGS)
+
+debug:
+	$(QEMU) -s $(QFLAGS)
 
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
