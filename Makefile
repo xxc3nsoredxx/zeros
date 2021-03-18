@@ -16,7 +16,7 @@ QEMU = qemu-system-i386
 QFLAGS = -curses -drive file=zeros.iso,format=raw
 OBJS = interrupts.o kb.o kernel0.o kernel1.o sys.o vga.o
 
-.PHONY: all relink install run
+.PHONY: all relink install run debug
 all: kernel.bin
 
 relink: $(OBJS)

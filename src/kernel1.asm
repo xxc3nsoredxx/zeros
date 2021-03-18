@@ -41,6 +41,6 @@ input_len:
 
 section .bss
 input_buf:
-    resb 25
+    resb 100
 input_buf_end:
     resb 1

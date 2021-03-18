@@ -20,26 +20,39 @@ getsn:
     push edi
 
     mov edi, [ebp + 8]      ; Buffer to read in to
-    mov ecx, [ebp + 12]     ; Count to read
-    cmp ecx, 0
+    xor ecx, ecx
+    cmp ecx, [ebp + 12]     ; Test if count of 0
     jz .done                ; 0, don't read anything
 
 .loop:
     mov al, [keycode.mod]   ; Test if key already read
     and al, KC_MOD_READ
     jnz .loop
-    movzx eax, BYTE [keycode.key]   ; Test for null key
-    cmp al, 0
+    movzx eax, BYTE [keycode.key]
+    cmp al, 0               ; Test for null key
     jz  .loop
+    cmp al, 8               ; Test for backspace
+    jz  .backspace
     stosb                   ; Save the character in the buffer
     cmp al, 0x0a            ; Test for return key
     jnz .print
     mov al, [keycode.mod]   ; Set the read bit
     or  al, KC_MOD_READ
     mov [keycode.mod], al
-    dec ecx
+    inc ecx
     jmp .done               ; EOL
 
+.backspace:
+    cmp ecx, 0              ; Do nothing if no characters in buffer
+    jnz .not_empty
+    mov al, [keycode.mod]   ; Set the read bit
+    or  al, KC_MOD_READ
+    mov [keycode.mod], al
+    jmp .loop
+.not_empty:
+    sub ecx, 2              ; Decrement counter (2x, so net -1)
+    dec edi                 ; Delete last character in buffer
+    mov BYTE [edi], 0
 .print:
     push ecx                ; Save counter
     push eax                ; Otherwise, print key
@@ -49,13 +62,12 @@ getsn:
     or  al, KC_MOD_READ
     mov [keycode.mod], al
 
-    dec ecx                 ; Get a new character
-    cmp ecx, 0
+    inc ecx                 ; Get a new character
+    cmp ecx, [ebp + 12]
     jnz .loop
 
 .done:
-    mov eax, [ebp + 12]     ; Get number of characters read
-    sub eax, ecx
+    mov eax, ecx            ; Number of characters read
 
     pop edi
     mov esp, ebp
@@ -74,26 +86,46 @@ putch:
     push ebx
 
     mov bl, [ebp + 8]       ; Build the letter+attribute into BX
+    mov bh, [COLOR]
+    cmp bl, 0x08            ; Test backspace
+    jz  .bs
     cmp bl, 0x0D            ; Test carriage return
     jz  .cr
     cmp bl, 0x0A            ; Test newline
     jz  .nl
-    mov bh, [COLOR]
-    push eax
     call getpos
     mov WORD [gs:eax], bx   ; Write to screen
-    pop eax
     inc BYTE [curx]
     mov bl, [COLS]          ; Test word wrap
     cmp [curx], bl
     jz  .wrap
     jmp .done
+
+.bs:                        ; Handle backspace
+    cmp BYTE [curx], 0      ; Test if cursor goes up a line
+    jz  .go_up
+    dec BYTE [curx]         ; Stays on same line
+    jmp .print_bs
+.go_up:
+    cmp BYTE [cury], 0      ; Test if at top left corner
+    jz  .done
+    dec BYTE [cury]         ; Move to end of previous line
+    mov al, [COLS]
+    dec al
+    mov [curx], al
+.print_bs:
+    mov bl, 0x20            ; Write a blank to screen
+    call getpos
+    mov WORD [gs:eax], bx
+    jmp .done
+
 .cr:                        ; Handle carriage return
     mov BYTE [curx], 0
     jmp .done
 .nl:                        ; Handle newline
     inc BYTE [cury]
     jmp .testscroll
+
 .wrap:                      ; Handle word wrap
     inc BYTE [cury]
     mov BYTE [curx], 0
@@ -102,6 +134,7 @@ putch:
     cmp [cury], bl
     jnz .done
     call scroll
+
 .done:
     pop ebx
     mov esp, ebp
