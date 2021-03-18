@@ -41,7 +41,7 @@ $(OBJ)/interrupts.o: interrupts.asm idt.hs kb.hs vga.hs
 $(OBJ)/kb.o: kb.asm kb.hs idt.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel0.o: kernel0.asm gdt.hs idt.hs kb.hs multiboot.hs
+$(OBJ)/kernel0.o: kernel0.asm gdt.hs idt.hs kb.hs multiboot.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/kernel1.o: kernel1.asm sys.hs

@@ -136,6 +136,7 @@ putch:
     call scroll
 
 .done:
+    call update_cursor
     pop ebx
     mov esp, ebp
     pop ebp
@@ -213,6 +214,7 @@ puts:
     inc esi
     loop .print_jmp
 .done:
+    call update_cursor
     pop es
     pop esi
     pop edi

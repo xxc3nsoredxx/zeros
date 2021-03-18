@@ -101,6 +101,79 @@ scroll:
     pop ebp
     ret
 
+; void update_cursor (void)
+; Moves the text mode cursor to the current position on screen
+update_cursor:
+    ; Set the high byte first
+    mov dx, VGA_CRTC_ADDR
+    mov al, VGA_CRTC_CURS_LOC_HI
+    out dx, al
+
+    ; Get the position (in VRAM)
+    call getpos
+    ; Divide by 2 to get position on screen
+    shr eax, 1
+    ; Save a backup copy
+    mov ecx, eax
+    ; Extract and send the high byte
+    shr eax, 8
+    mov dx, VGA_CRTC_DATA
+    out dx, al
+
+    ; Send the low byte
+    mov dx, VGA_CRTC_ADDR
+    mov al, VGA_CRTC_CURS_LOC_LO
+    out dx, al
+    ; Restore from backup and send
+    mov eax, ecx
+    mov dx, VGA_CRTC_DATA
+    out dx, al
+    ret
+
+; void vga_init (void)
+; Initializes the screen:
+;   - Set the VGA I/O addresses to use 0x3dX
+;   - Set the cursor (block) (not yet)
+; Only called in kernel0
+vga_init:
+    ; Set the I/O addresses to 0x3dX
+    mov dx, VGA_MISC_OUT_R
+    in  al, dx
+    or  al, VGA_MISC_OUT_IOAS
+    mov dx, VGA_MISC_OUT_W
+    out dx, al
+    ret
+
+    ; Get the max scan line (ie, font height) into cl
+    ; mov dx, VGA_CRTC_ADDR
+    ; mov al, VGA_CRTC_MAX_SCAN
+    ; out dx, al
+    ; mov dx, VGA_CRTC_DATA
+    ; in  al, dx
+    ; and al, VGA_CRTC_MAX_SCAN_MSL
+    ; mov cl, al
+
+    ; Set start of cursor to top (ie, scan line 0)
+    ; Cursor Start has an additional field, Cursor Disable, bit 5. This can
+    ; safely be ignored and set to 0 (ie, cursor enabled).
+    ; mov dx, VGA_CRTC_ADDR
+    ; mov al, VGA_CRTC_CURS_START
+    ; out dx, al
+    ; mov dx, VGA_CRTC_DATA
+    ; xor al, al
+    ; out dx, al
+
+    ; Set end of cursor to bottom (ie, max scan line)
+    ; Cursor End has an additional field, Cursor Skew, bits 5-6. This can
+    ; safely be ignored and set to 0 (ie, no skew).
+    ; mov dx, VGA_CRTC_ADDR
+    ; mov al, VGA_CRTC_CURS_END
+    ; out dx, al
+    ; mov dx, VGA_CRTC_DATA
+    ; mov al, cl
+    ; out dx, al
+    ; ret
+
 section .data
 curx:                       ; Current cursor x
     db  0

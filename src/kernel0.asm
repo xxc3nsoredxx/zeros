@@ -2,10 +2,11 @@
     ; Multiboot header is defined at the bottom of this file
     bits    32
 
-%include    "gdt.hs"
-%include    "idt.hs"
-%include    "kb.hs"
-%include    "multiboot.hs"
+%include "gdt.hs"
+%include "idt.hs"
+%include "kb.hs"
+%include "multiboot.hs"
+%include "vga.hs"
 
 global  kstart              ; Make kstart visible
 extern  kmain               ; kmain defined in kernel1.asm
@@ -83,6 +84,7 @@ kstart:
     lidt [idt_desc]         ; Load the IDT
     sti                     ; Re-enable interrupts
 
+    call vga_init           ; Initialize the screen
     call kb_init            ; Initialize the keyboard
 
     call kmain              ; Kernel main function
