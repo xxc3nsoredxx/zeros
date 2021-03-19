@@ -13,10 +13,10 @@ AFLAGS = -f elf32 -w+all -w+error -w-unknown-warning -i $(INC)/
 LD = i386-elf-ld
 LFLAGS = -M --fatal-warnings
 QEMU = qemu-system-i386
-QFLAGS = -curses -drive file=zeros.iso,format=raw
+QFLAGS = -curses -drive file=zeros.iso,format=raw -s
 OBJS = interrupts.o kb.o kernel0.o kernel1.o sys.o vga.o
 
-.PHONY: all relink install run debug
+.PHONY: all relink install run
 all: kernel.bin
 
 relink: $(OBJS)
@@ -28,9 +28,6 @@ install: all
 
 run:
 	$(QEMU) $(QFLAGS)
-
-debug:
-	$(QEMU) -s $(QFLAGS)
 
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
