@@ -4,6 +4,9 @@
 ; Input functions
 extern getsn
 
+; Miscellaneous functions
+extern clear
+
 ; Output functions
 extern putch
 extern puts

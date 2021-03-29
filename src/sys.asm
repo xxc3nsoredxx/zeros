@@ -74,6 +74,46 @@ getsn:
     pop ebp
     ret 8
 
+;;;;;;;;;;;;;;;;;;;
+;; MISCELLANEOUS ;;
+;;;;;;;;;;;;;;;;;;;
+
+; void clear (void)
+; Clears the screen and moves cursor to top left
+clear:
+    push ebp
+    mov ebp, esp
+    push edi
+    push esi
+    push es
+
+    mov ax, gs              ; Set es to point to VRAM
+    mov es, ax
+
+    mov esi, .blanks        ; Write ' ' on all locations 2 chars at a time
+    mov edi, 0
+    movzx eax, BYTE [ROWS]
+    mul BYTE [COLS]
+    shr eax, 1
+    mov ecx, eax
+.loop:
+    movsd
+    sub esi, 4
+    loop .loop
+
+    mov BYTE [curx], 0      ; Move the cursor
+    mov BYTE [cury], 0
+    call update_cursor
+
+    pop es
+    pop esi
+    pop edi
+    mov esp, ebp
+    pop ebp
+    ret
+.blanks:
+    dd  0x0a200a20
+
 ;;;;;;;;;;;;
 ;; OUTPUT ;;
 ;;;;;;;;;;;;

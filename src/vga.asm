@@ -4,41 +4,6 @@
 %include "vga.hs"
 
 section .text
-; void clear (void)
-; Clears the screen and moves cursor to top left
-clear:
-    push ebp
-    mov ebp, esp
-    push edi
-    push esi
-    push es
-
-    mov ax, gs              ; Set es to point to VRAM
-    mov es, ax
-
-    mov esi, .blanks        ; Write ' ' on all locations 2 chars at a time
-    mov edi, 0
-    movzx eax, BYTE [ROWS]
-    mul BYTE [COLS]
-    shr ecx, 1
-    mov ecx, eax
-.loop:
-    movsd
-    sub esi, 4
-    loop .loop
-
-    mov BYTE [curx], 0
-    mov BYTE [cury], 0
-
-    pop es
-    pop esi
-    pop edi
-    mov esp, ebp
-    pop ebp
-    ret
-.blanks:
-    dd  0x200A200A
-
 ; u32 getpos (void)
 ; Returns the current x/y pos as address in VRAM
 getpos:

@@ -2,7 +2,6 @@
 %define VGA_HS_20200312_234110
 
 ; Screen control functions
-extern clear
 extern getpos
 extern scroll
 extern update_cursor

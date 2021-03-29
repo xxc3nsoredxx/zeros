@@ -7,6 +7,8 @@ section .text
     global  kmain           ; Make kmain visible
 
 kmain:
+    call clear              ; Clear sets bg/fg colors in each cell
+
 .prompt_loop:
     push DWORD [prompt_len] ; Show prompt
     push prompt
