@@ -29,6 +29,9 @@ install: all
 run:
 	$(QEMU) $(QFLAGS)
 
+runx:
+	startx ./qemu_zeros.xinitrc
+
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
 
