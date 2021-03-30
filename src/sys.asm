@@ -90,6 +90,9 @@ clear:
     mov ax, gs              ; Set es to point to VRAM
     mov es, ax
 
+    mov al, [color]         ; Write the color attribute into the blanks
+    mov BYTE [.blanks + 1], al
+    mov BYTE [.blanks + 3], al
     mov esi, .blanks        ; Write ' ' on all locations 2 chars at a time
     mov edi, 0
     movzx eax, BYTE [ROWS]
@@ -112,7 +115,7 @@ clear:
     pop ebp
     ret
 .blanks:
-    dd  0x0a200a20
+    dd  0x00200020
 
 ;;;;;;;;;;;;
 ;; OUTPUT ;;
@@ -126,7 +129,7 @@ putch:
     push ebx
 
     mov bl, [ebp + 8]       ; Build the letter+attribute into BX
-    mov bh, [COLOR]
+    mov bh, [color]
     cmp bl, 0x08            ; Test backspace
     jz  .bs
     cmp bl, 0x0D            ; Test carriage return
@@ -182,7 +185,47 @@ putch:
     pop ebp
     ret 4
 
-; void puts (char *str, int len)
+; void putintx (u32 num)
+; Print num as hex
+putintx:
+    push ebp
+    mov ebp, esp
+    push esi
+    push edi
+
+    ; Loop through the number 1 nybble at a time
+    mov eax, [ebp + 8]
+    mov ecx, 8
+.loop:
+    ; Extract a nybble
+    mov edx, eax
+    and edx, 0x0f
+    shr eax, 4
+
+    ; Copy the value
+    lea esi, [.xlate + edx]
+    lea edi, [.str + ecx - 1]
+    movsb
+
+    dec ecx
+    jnz .loop
+
+    ; Print the number
+    push 8
+    push .str
+    call puts
+
+    pop edi
+    pop esi
+    mov esp, ebp
+    pop ebp
+    ret 4
+.str:                       ; Buffer to build the string into
+    times 8 db 0
+.xlate:                     ; Table to translate 0-15 to 0-f
+    db  '0123456789abcdef'
+
+; void puts (char *str, u32 len)
 ; Print a string of length len on the screen
 puts:
     push ebp
@@ -201,7 +244,7 @@ puts:
     mov esi, [ebp + 8]      ; Address of the first character
     call getpos             ; Get the current pos
     mov edi, eax
-    movzx ebx, BYTE [COLOR]
+    movzx ebx, BYTE [color]
 
 .print:
     cmp BYTE [esi], 0x0A    ; Line feed

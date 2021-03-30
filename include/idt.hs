@@ -1,10 +1,15 @@
 %ifndef IDT_HS_20200327_065700
 %define IDT_HS_20200327_065700
 
-extern _mem_base
+; P-Mode exceptions (by vector)
+extern np_int
+
+; PIC handlers
 extern master_null
 extern slave_null
 extern kb_int
+
+extern _mem_base
 
 struc   idt_entry_t
     .off_bot:   resw 1      ; Bottom word of routine's offset (ie pointer)
@@ -35,6 +40,7 @@ struc   idt_desc_t
 endstruc
 
 %assign INT_GATE    0b10001110  ; Attribute byte for interrupt gates
+%assign PLACEHOLDER 0b00001110  ; Placeholder attribute (present not set)
 
 ; 8259 Programmable Interrupt Controller I/O ports
 %assign PIC_M_CMD   0x20    ; PIC master command port

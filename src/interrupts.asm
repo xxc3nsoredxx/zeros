@@ -1,10 +1,60 @@
     ; Interrupt handlers
     bits    32
 
-%include    "idt.hs"
-%include    "kb.hs"
+%include "idt.hs"
+%include "kb.hs"
+%include "sys.hs"
+%include "vga.hs"
 
 section .text
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; P-Mode exception handlers ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; P-Mode Segment Not Present
+np_int:
+    ; Disable cursor
+    ; Set bit 5 of Cursor Start to disable the dursor
+    mov dx, VGA_CRTC_ADDR
+    mov al, VGA_CRTC_CURS_START
+    out dx, al
+    mov dx, VGA_CRTC_DATA
+    mov al, 0x10
+    out dx, al
+
+    ; Set the color scheme
+    mov al, [PANIC_COLOR]
+    mov [color], al
+    call clear
+
+    ; Get the error code
+    mov ax, WORD [esp]
+
+    ; Test if selector is for IDT or GDT/LDT
+    ; bit 1 set: IDT
+    ; bit 1 clear: GDT/LDT
+    bt ax, 1
+    jnc .gdt_ldt
+    ; Print IDT panic message
+    push DWORD [panic_np_int_len]
+    push panic_np_int
+    call puts
+    jmp .sel
+
+.gdt_ldt:
+.sel:
+    ; Print selector
+    movzx eax, WORD [esp]
+    shr eax, 3
+    push eax
+    call putintx
+
+    hlt
+
+;;;;;;;;;;;;;;;;;;
+;; PIC handlers ;;
+;;;;;;;;;;;;;;;;;;
+
 ; PIC master null handler
 master_null:
     pusha
@@ -215,3 +265,14 @@ kb_int:
 .done:
     popa
     iret
+
+section .data
+panic_np_int:
+    db  'PANIC: UNHANDLEABLE INTERRUPT', 0x0a
+    db  'Missing gate: '
+panic_np_int_len:
+    dd  $ - panic_np_int
+
+section .rodata
+PANIC_COLOR:
+    db  VGA_BG_WHITE | VGA_FG_L_RED

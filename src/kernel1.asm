@@ -19,16 +19,17 @@ kmain:
     call getsn
     push eax                ; Save read count
 
-    mov eax, 0x0D           ; Go to new line
+    mov eax, 0x0d           ; Go to new line
     push eax
     call putch
-    mov eax, 0x0A
+    mov eax, 0x0a
     push eax
     call putch
 
     push input_buf          ; Print input
     call puts               ; The length is alread at the top of the stack
 
+    ud2
     jmp .prompt_loop        ; Loop
 
     ret

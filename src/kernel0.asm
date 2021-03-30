@@ -51,17 +51,26 @@ kstart:
     out PIC_M_DATA, al
     out PIC_S_DATA, al
 
-    mov eax, master_null    ; Fill in IRQ 0 offsets
+    ; Fill in #NP offsets
+    mov eax, np_int
+    mov [idt.pm_np + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.pm_np + idt_entry_t.off_top], ax
+
+    ; Fill in IRQ 0 offsets
+    mov eax, master_null
     mov [idt.irq0 + idt_entry_t.off_bot], ax
     shr eax, 16
     mov [idt.irq0 + idt_entry_t.off_top], ax
 
-    mov eax, kb_int         ; Fill in IRQ 1 offsets
+    ; Fill in IRQ 1 offsets
+    mov eax, kb_int
     mov [idt.irq1 + idt_entry_t.off_bot], ax
     shr eax, 16
     mov [idt.irq1 + idt_entry_t.off_top], ax
 
-%assign irq_off 0           ; Fill in rest of the PIC master offsets
+    ; Fill in rest of PIC master offsets
+%assign irq_off 0
 %rep 6
     mov eax, master_null
     mov [idt.irq2_7 + irq_off + idt_entry_t.off_bot], ax
@@ -70,7 +79,8 @@ kstart:
 %assign irq_off irq_off + 8
 %endrep
 
-%assign irq_off 0           ; Fill in the PIC slave offsets
+    ; Fill in the PIC slave offsets
+%assign irq_off 0
 %rep 8
     mov eax, slave_null
     mov [idt.irq8_15 + irq_off + idt_entry_t.off_bot], ax
@@ -140,13 +150,30 @@ gdt_desc:                   ; GDT descriptor
 
 section .idt progbits alloc noexec nowrite align=4
 idt:                        ; Start of the IDT
-.pm_ex:                     ; Pmode exceptions (null entries for now)
-%rep 32
+; P-Mode exceptions
+%rep 11                     ; Null entries
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
         at idt_entry_t.zero,        db 0
-        at idt_entry_t.type_attr,   db 0
+        at idt_entry_t.type_attr,   db PLACEHOLDER
+        at idt_entry_t.off_top,     dw 0
+    iend
+%endrep
+.pm_np:                     ; Segment Not Present
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0xFFFF   ; Filled in code
+        at idt_entry_t.selector,    dw GDT_CODE_INDEX
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db INT_GATE
+        at idt_entry_t.off_top,     dw 0xFFFF   ; Filled in code
+    iend
+%rep 20                     ; Null entries
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0
+        at idt_entry_t.selector,    dw 0
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db PLACEHOLDER
         at idt_entry_t.off_top,     dw 0
     iend
 %endrep
@@ -192,7 +219,7 @@ idt:                        ; Start of the IDT
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
         at idt_entry_t.zero,        db 0
-        at idt_entry_t.type_attr,   db 0
+        at idt_entry_t.type_attr,   db PLACEHOLDER
         at idt_entry_t.off_top,     dw 0
     iend
 %endrep

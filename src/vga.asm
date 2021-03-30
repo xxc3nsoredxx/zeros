@@ -99,6 +99,7 @@ update_cursor:
 ; Initializes the screen:
 ;   - Set the VGA I/O addresses to use 0x3dX
 ;   - Set the cursor (block)
+;   - Set the bg/fg colors
 ; Only called in kernel0
 vga_init:
     ; Set the I/O addresses to 0x3dX
@@ -136,18 +137,24 @@ vga_init:
     mov dx, VGA_CRTC_DATA
     mov al, cl
     out dx, al
+
+    ; Set the colors to default
+    mov al, [DEF_COLOR]
+    mov [color], al
     ret
 
-section .data
+section .bss
 curx:                       ; Current cursor x
-    db  0
+    resb 1
 cury:                       ; Current cursor y
-    db  0
+    resb 1
+color:                      ; BG | FG
+    resb 1
 
 section .rodata
 ROWS:                       ; Number of rows on screen
     db  25
 COLS:                       ; Number of cols
     db  80
-COLOR:                      ; Light green on black
-    db  0x0A
+DEF_COLOR:                  ; Default color
+    db  VGA_BG_BLACK | VGA_FG_L_GREEN

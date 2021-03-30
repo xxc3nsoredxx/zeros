@@ -9,6 +9,7 @@ extern clear
 
 ; Output functions
 extern putch
+extern putintx
 extern puts
 
 %endif ; SYS_HS_20210314_180000
