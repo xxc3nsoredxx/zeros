@@ -28,7 +28,7 @@ np_int:
     call clear
 
     ; Get the error code
-    mov ax, WORD [esp]
+    movzx eax, WORD [esp]
 
     ; Test if selector is for IDT or GDT/LDT
     ; bit 1 set: IDT
@@ -36,19 +36,16 @@ np_int:
     bt ax, 1
     jnc .gdt_ldt
     ; Print IDT panic message
-    push DWORD [panic_np_int_len]
-    push panic_np_int
-    call puts
-    jmp .sel
-
-.gdt_ldt:
-.sel:
-    ; Print selector
-    movzx eax, WORD [esp]
+    ; Push IDT selector
     shr eax, 3
     push eax
-    call putintx
+    push DWORD [panic_np_int_len]
+    push panic_np_int
+    call printf
+    hlt
 
+.gdt_ldt:
+    ; TODO: GDT/LDT messages
     hlt
 
 ;;;;;;;;;;;;;;;;;;
@@ -266,13 +263,12 @@ kb_int:
     popa
     iret
 
-section .data
-panic_np_int:
-    db  'PANIC: UNHANDLEABLE INTERRUPT', 0x0a
-    db  'Missing gate: '
-panic_np_int_len:
-    dd  $ - panic_np_int
-
 section .rodata
 PANIC_COLOR:
     db  VGA_BG_WHITE | VGA_FG_L_RED
+
+panic_np_int:
+    db  'PANIC: UNHANDLEABLE INTERRUPT', 0x0a
+    db  'Missing gate: %x'
+panic_np_int_len:
+    dd  $ - panic_np_int

@@ -121,6 +121,107 @@ clear:
 ;; OUTPUT ;;
 ;;;;;;;;;;;;
 
+; void printf (char *fmt, u32 fmt_len, ...)
+; Print a formatted string of length fmt_len to the screen
+; %x: prints a u32 as hex
+; %%: prints a '%'
+printf:
+    push ebp
+    mov ebp, esp
+    push esi
+    push edi
+    push ebx
+
+    ; Length 0, print nothing
+    mov ecx, [ebp + 12]
+    cmp ecx, 0
+    jz  .done
+
+    ; Use esi to store the string (segment) start
+    mov esi, [ebp + 8]
+    ; Use edi to store the end of the format string
+    lea edi, [esi + ecx]
+    ; Use ecx to store the count of current letters to print
+    xor ecx, ecx
+    ; Use ebx to store the number of parameters on the stack
+    xor ebx, ebx
+
+.loop:
+    ; Test formats
+    cmp BYTE [esi + ecx], '%'
+    jnz .skip
+    ; Assume ecx gets clobbered, make a backup so we can return
+    push ecx
+    ; Print string up to, but not including, the format
+    push ecx
+    push esi
+    call puts
+
+    ; Return to the format (+1 to skip the %)
+    pop ecx
+    lea esi, [esi + ecx + 1]
+    ; Test for end-of-string (incomplete format)
+    cmp esi, edi
+    jz  .done
+
+    ; Test for %x
+    cmp BYTE [esi], 'x'
+    jnz .percent
+    ; Print the number given on the stack (in hex)
+    mov ecx, [ebp + ebx*4 + 16]
+    push ecx
+    call putintx
+    ; Track number of format arguments on the stack
+    inc ebx
+    jmp .next
+
+.percent:
+    ; Test for %%
+    cmp BYTE [esi], '%'
+    jnz .next               ; Do nothing on invalid format
+    ; Print a single '%'
+    push '%'
+    call putch
+    ; Fall through to .next
+
+.next:
+    ; Test for end-of-string
+    inc esi
+    cmp esi, edi
+    jz  .done
+    ; New string segment
+    xor ecx, ecx
+    jmp .loop
+
+.skip:
+    ; Not a format
+    inc ecx
+    ; Test for end-of-string
+    lea edx, [esi + ecx]
+    cmp edx, edi
+    jnz .loop
+    ; If end-of-string, print what is left
+    push ecx
+    push esi
+    call puts
+
+.done:
+    ; Remove any args
+    ; Replace last one with return address
+    mov eax, [ebp + 4]
+    mov [ebp + ebx*4 + 12], eax
+    ; Replace second to last one with ebp (and fix ebp)
+    mov eax, [ebp]
+    lea ebp, [ebp + ebx*4 + 8]
+    mov [ebp], eax
+
+    pop ebx
+    pop edi
+    pop esi
+    mov esp, ebp
+    pop ebp
+    ret
+
 ; void putch (char c)
 ; Prints a single character on the screem
 putch:

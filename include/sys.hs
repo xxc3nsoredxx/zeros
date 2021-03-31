@@ -8,6 +8,7 @@ extern getsn
 extern clear
 
 ; Output functions
+extern printf
 extern putch
 extern putintx
 extern puts

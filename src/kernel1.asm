@@ -2,12 +2,16 @@
     bits    32
 
 %include "sys.hs"
+%include "tests.hs"
 
 section .text
     global  kmain           ; Make kmain visible
 
 kmain:
     call clear              ; Clear sets bg/fg colors in each cell
+
+    ; Tests
+    call printf_test
 
 .prompt_loop:
     push DWORD [prompt_len] ; Show prompt
