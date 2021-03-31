@@ -14,7 +14,7 @@ printf_test:
     call printf
 
     ; Test %x
-    push 305441741
+    push 3735929054
     push DWORD [printf_test2_len]
     push printf_test2
     call printf
@@ -34,6 +34,19 @@ printf_test:
     push printf_test5
     call printf
 
+    ; Test %u
+    push 0xdeadc0de
+    push DWORD [printf_test6_len]
+    push printf_test6
+    call printf
+
+    ; Test %u and %x
+    push 0xdeadc0de
+    push 3735929054
+    push DWORD [printf_test7_len]
+    push printf_test7
+    call printf
+
     ret
 
 section .rodata
@@ -42,7 +55,7 @@ printf_test1:
 printf_test1_len:
     dd $ - printf_test1
 printf_test2:
-    db '305441741 in hex: %x', 0x0a
+    db '3735929054 in hex: %x', 0x0a
 printf_test2_len:
     dd $ - printf_test2
 printf_test3:
@@ -57,3 +70,11 @@ printf_test5:
     db 'Ends in incomplete format', 0x0a, '%'
 printf_test5_len:
     dd $ - printf_test5
+printf_test6:
+    db '0xdeadc0de in (unsigned) decimal: %u', 0x0a
+printf_test6_len:
+    dd $ - printf_test6
+printf_test7:
+    db '0x%x (%%x) in (unsigned) decimal: %u (%%u)', 0x0a
+printf_test7_len:
+    dd $ - printf_test7

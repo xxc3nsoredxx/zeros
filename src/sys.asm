@@ -123,6 +123,10 @@ clear:
 
 ; void printf (char *fmt, u32 fmt_len, ...)
 ; Print a formatted string of length fmt_len to the screen
+; Fun fact:
+;   This has been ranked as The World's Best (TM) printf implementation!
+;   (cert. pend.)
+; %u: prints a u32 as unsigned decimal
 ; %x: prints a u32 as hex
 ; %%: prints a '%'
 printf:
@@ -164,6 +168,19 @@ printf:
     cmp esi, edi
     jz  .done
 
+.u:
+    ; Test for %u
+    cmp BYTE [esi], 'u'
+    jnz .x
+    ; Print the number given on the stack (in unsigned decimal)
+    mov ecx, [ebp + ebx*4 + 16]
+    push ecx
+    call putintu
+    ; Track number of format arguments on the stack
+    inc ebx
+    jmp .next
+
+.x:
     ; Test for %x
     cmp BYTE [esi], 'x'
     jnz .percent
@@ -285,6 +302,53 @@ putch:
     mov esp, ebp
     pop ebp
     ret 4
+
+; void putintu (u32 num)
+; Print num as unsigned decimal
+putintu:
+    push ebp
+    mov ebp, esp
+    push edi
+
+    ; Go backwards
+    std
+    ; Start at the end of the string
+    lea edi, [.str + 9]
+    ; Prepare for division
+    xor edx, edx
+    mov eax, [ebp + 8]
+    mov ecx, 10
+
+.loop:
+    div ecx
+    ; Move the digit into place
+    xchg eax, edx
+    add al, '0'
+    stosb
+    xchg eax, edx
+    ; If quot is 0, done
+    ; Note: if the number to print is 0, the zero digit just got saved
+    xor edx, edx
+    cmp eax, 0
+    jnz .loop
+
+    ; Restore forwards direction
+    cld
+    ; Get length of string
+    inc edi
+    lea ecx, [.str + 10]
+    sub ecx, edi
+    ; Print
+    push ecx
+    push edi
+    call puts
+
+    pop edi
+    mov esp, ebp
+    pop ebp
+    ret 4
+.str:                       ; Buffer to build the string into
+    times 10 db 0
 
 ; void putintx (u32 num)
 ; Print num as hex

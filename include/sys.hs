@@ -10,6 +10,7 @@ extern clear
 ; Output functions
 extern printf
 extern putch
+extern putintu
 extern putintx
 extern puts
 

@@ -269,6 +269,6 @@ PANIC_COLOR:
 
 panic_np_int:
     db  'PANIC: UNHANDLEABLE INTERRUPT', 0x0a
-    db  'Missing gate: %x'
+    db  'Missing gate: %u'
 panic_np_int_len:
     dd  $ - panic_np_int
