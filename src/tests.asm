@@ -13,6 +13,10 @@ exception_test:
     mov eax, [esp + 4]      ; Not [ebp + 8], no stack frame created
     jmp [.jump_table + eax*4]
 
+    ; Test #UD
+.ud:
+    ud2
+
     ; Test #NP, IDT selector
 .np_idt:
     int 0x30
@@ -23,6 +27,7 @@ exception_test:
     mov es, ax
 
 .jump_table:
+    dd  .ud
     dd  .np_idt
     dd  .np_gdt
 

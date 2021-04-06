@@ -2,6 +2,7 @@
 %define IDT_HS_20200327_065700
 
 ; P-Mode exceptions (by vector)
+extern ud_int
 extern np_int
 
 ; PIC handlers

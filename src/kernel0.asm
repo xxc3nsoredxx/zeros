@@ -53,6 +53,12 @@ kstart:
     out PIC_M_DATA, al
     out PIC_S_DATA, al
 
+    ; Fill in #UD offsets
+    mov eax, ud_int
+    mov [idt.pm_ud + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.pm_ud + idt_entry_t.off_top], ax
+
     ; Fill in #NP offsets
     mov eax, np_int
     mov [idt.pm_np + idt_entry_t.off_bot], ax
@@ -160,7 +166,24 @@ gdt_desc:                   ; GDT descriptor
 section .idt progbits alloc noexec nowrite align=8
 idt:                        ; Start of the IDT
 ; P-Mode exceptions (0x00 - 0x1f)
-%rep 11                     ; Null entries
+%rep 6                      ; Null entries
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0
+        at idt_entry_t.selector,    dw 0
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
+        at idt_entry_t.off_top,     dw 0
+    iend
+%endrep
+.pm_ud:                     ; Invalid Opcode Exception (0x06)
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0xFFFF   ; Filled in code
+        at idt_entry_t.selector,    dw GDT_CODE_INDEX
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db INT_GATE
+        at idt_entry_t.off_top,     dw 0xFFFF   ; Filled in code
+    iend
+%rep 4                      ; Null entries
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
