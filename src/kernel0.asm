@@ -8,17 +8,19 @@
 %include "multiboot.hs"
 %include "vga.hs"
 
-global  kstart              ; Make kstart visible
-extern  kmain               ; kmain defined in kernel1.asm
+global kstart               ; Make kstart visible
+extern kmain                ; kmain defined in kernel1.asm
+
+; Linker variables
+extern _gdt_start           ; Address of GDT struct
+extern _idt_start           ; Address of IDT struct
 
 section .text
 ; Kernel entry point
 kstart:
     cli                     ; Disable interrupts
-    ; The data segment is not set yet, need to manually correct the address
-    lea ecx, [gdt_desc - gdt]
-    add ecx, _gdt_start
-    lgdt [ecx]         ; Load the GDT
+    ; The data segment is not set yet, need to manually give physical address
+    lgdt [_gdt_start + gdt_desc - gdt]  ; Load the GDT
     jmp GDT_CODE_INDEX:.reload_seg  ; The jump reloads CS
 .reload_seg:
     mov ax, GDT_STACK_INDEX ; Set the stack segment
@@ -89,8 +91,6 @@ kstart:
 %assign irq_off irq_off + 8
 %endrep
 
-    ; Fix the start address of the IDT, set it to the physical address
-    add DWORD [idt_desc + idt_desc_t.idt], _mem_base
     lidt [idt_desc]         ; Load the IDT
     sti                     ; Re-enable interrupts
 
@@ -101,11 +101,11 @@ kstart:
 
     hlt                     ; Halt the CPU after leaving kernel
 
-section .gdt progbits alloc noexec nowrite align=4
+section .gdt progbits alloc noexec nowrite align=8
 gdt:                        ; The start of the GDT
-.gdt_null:                  ; Null selector (GDT offset = 0x00)
+.null:                      ; Null selector (GDT offset = 0x00)
     dq  0                   ; All zeros
-.gdt_vram:                  ; VRAM selector (GDT offset = 0x08)
+.vram:                      ; VRAM selector (GDT offset = 0x08)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_VRAM_LIM_BOT
         at gdt_entry_t.base_bot,        dw GDT_VRAM_BASE_BOT
@@ -114,7 +114,7 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_VRAM_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_VRAM_BASE_TOP
     iend
-.gdt_stack:                 ; Stack selector (GDT offset = 0x10)
+.stack:                     ; Stack selector (GDT offset = 0x10)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_STACK_LIM_BOT
         at gdt_entry_t.base_bot,        dw GDT_STACK_BASE_BOT
@@ -123,7 +123,7 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_STACK_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_STACK_BASE_TOP
     iend
-.gdt_code:                  ; Code selector (GDT offset = 0x18)
+.code:                      ; Code selector (GDT offset = 0x18)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_CODE_LIM_BOT
         at gdt_entry_t.base_bot,        dw GDT_CODE_BASE_BOT
@@ -132,12 +132,21 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_CODE_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_CODE_BASE_TOP
     iend
-.gdt_data:                  ; Data selector (GDT offset = 0x20)
+.data:                      ; Data selector (GDT offset = 0x20)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_DATA_LIM_BOT
         at gdt_entry_t.base_bot,        dw GDT_DATA_BASE_BOT
         at gdt_entry_t.base_top_bot,    db GDT_DATA_BASE_TOP_BOT
         at gdt_entry_t.access,          db GDT_DATA_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_DATA_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_DATA_BASE_TOP
+    iend
+.not_present:           ; Intentionally not present (GDT offset = 0x28)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_DATA_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_DATA_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_DATA_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_DATA_ACCESS & 0x7f
         at gdt_entry_t.flags_lim,       db GDT_DATA_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_DATA_BASE_TOP
     iend
@@ -148,19 +157,19 @@ gdt_desc:                   ; GDT descriptor
         at gdt_desc_t.gdt,      dd _gdt_start
     iend
 
-section .idt progbits alloc noexec nowrite align=4
+section .idt progbits alloc noexec nowrite align=8
 idt:                        ; Start of the IDT
-; P-Mode exceptions
+; P-Mode exceptions (0x00 - 0x1f)
 %rep 11                     ; Null entries
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
         at idt_entry_t.zero,        db 0
-        at idt_entry_t.type_attr,   db PLACEHOLDER
+        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
         at idt_entry_t.off_top,     dw 0
     iend
 %endrep
-.pm_np:                     ; Segment Not Present
+.pm_np:                     ; Segment Not Present (0x0b)
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0xFFFF   ; Filled in code
         at idt_entry_t.selector,    dw GDT_CODE_INDEX
@@ -173,10 +182,11 @@ idt:                        ; Start of the IDT
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
         at idt_entry_t.zero,        db 0
-        at idt_entry_t.type_attr,   db PLACEHOLDER
+        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
         at idt_entry_t.off_top,     dw 0
     iend
 %endrep
+; PIC interrupts (0x20 - 0x2f)
 .irq0:                      ; PIC interrupt timer (null handler for now)
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0xFFFF   ; Filled in code
@@ -213,13 +223,22 @@ idt:                        ; Start of the IDT
         at idt_entry_t.off_top,     dw 0xFFFF
     iend
 %endrep
-.rest:                      ; Rest of the IDT (null entries for now)
-%rep 208
+; Rest of user-defined interrupts (0x30 - 0xff)
+.not_present:               ; Intentionally not present (0x30)
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
         at idt_entry_t.zero,        db 0
-        at idt_entry_t.type_attr,   db PLACEHOLDER
+        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
+        at idt_entry_t.off_top,     dw 0
+    iend
+.rest:                      ; Rest of the IDT (null entries for now)
+%rep 207
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0
+        at idt_entry_t.selector,    dw 0
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
         at idt_entry_t.off_top,     dw 0
     iend
 %endrep
@@ -227,7 +246,7 @@ idt:                        ; Start of the IDT
 idt_desc:                   ; IDT descriptor
     istruc  idt_desc_t
         at idt_desc_t.size, dw idt.end - idt - 1
-        at idt_desc_t.idt,  dd idt
+        at idt_desc_t.idt,  dd _idt_start
     iend
 
 section .multiboot progbits align=4

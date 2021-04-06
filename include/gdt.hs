@@ -1,8 +1,6 @@
 %ifndef GDT_HS_20200318_232100
 %define GDT_HS_20200318_232100
 
-extern _gdt_start
-
 struc   gdt_entry_t
     .limit_bot: resw 1      ; Bottom word of segment limit
         alignb  2
@@ -133,10 +131,11 @@ endstruc
 ;                             +-------- Pagewise
 %assign GDT_DATA_BASE_TOP   0
 
-%assign GDT_VRAM_INDEX      0x08
-%assign GDT_STACK_INDEX     0x10
-%assign GDT_CODE_INDEX      0x18
-%assign GDT_DATA_INDEX      0x20
+%assign GDT_VRAM_INDEX  0x08
+%assign GDT_STACK_INDEX 0x10
+%assign GDT_CODE_INDEX  0x18
+%assign GDT_DATA_INDEX  0x20
+%assign GDT_NOT_PRESENT 0x28
 
 %endif
 

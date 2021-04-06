@@ -2,9 +2,30 @@
     bits    32
 
 %include "tests.hs"
+%include "gdt.hs"
 %include "sys.hs"
 
 section .text
+; NO_RET exception_test (u32 exception)
+; Trigger an exception
+exception_test:
+    ; Get index into jump table
+    mov eax, [esp + 4]      ; Not [ebp + 8], no stack frame created
+    jmp [.jump_table + eax*4]
+
+    ; Test #NP, IDT selector
+.np_idt:
+    int 0x30
+
+    ; Test #NP, GDT selector
+.np_gdt:
+    mov ax, GDT_NOT_PRESENT
+    mov es, ax
+
+.jump_table:
+    dd  .np_idt
+    dd  .np_gdt
+
 ; void printf_test (void)
 ; Basic printf test
 printf_test:
@@ -51,30 +72,30 @@ printf_test:
 
 section .rodata
 printf_test1:
-    db 'Just a basic printf test', 0x0a
+    db  'Just a basic printf test', 0x0a
 printf_test1_len:
-    dd $ - printf_test1
+    dd  $ - printf_test1
 printf_test2:
-    db '3735929054 in hex: %x', 0x0a
+    db  '3735929054 in hex: %x', 0x0a
 printf_test2_len:
-    dd $ - printf_test2
+    dd  $ - printf_test2
 printf_test3:
-    db 'Use "%%%%" to print "%%"', 0x0a
+    db  'Use "%%%%" to print "%%"', 0x0a
 printf_test3_len:
-    dd $ - printf_test3
+    dd  $ - printf_test3
 printf_test4:
-    db 'Contains "%%q", an invalid format ->%q<-', 0x0a
+    db  'Contains "%%q", an invalid format ->%q<-', 0x0a
 printf_test4_len:
-    dd $ - printf_test4
+    dd  $ - printf_test4
 printf_test5:
-    db 'Ends in incomplete format', 0x0a, '%'
+    db  'Ends in incomplete format', 0x0a, '%'
 printf_test5_len:
-    dd $ - printf_test5
+    dd  $ - printf_test5
 printf_test6:
-    db '0xdeadc0de in (unsigned) decimal: %u', 0x0a
+    db  '0xdeadc0de in (unsigned) decimal: %u', 0x0a
 printf_test6_len:
-    dd $ - printf_test6
+    dd  $ - printf_test6
 printf_test7:
-    db '0x%x (%%x) in (unsigned) decimal: %u (%%u)', 0x0a
+    db  '0x%x (%%x) in (unsigned) decimal: %u (%%u)', 0x0a
 printf_test7_len:
-    dd $ - printf_test7
+    dd  $ - printf_test7

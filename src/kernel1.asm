@@ -13,6 +13,9 @@ kmain:
     ; Tests
     call printf_test
 
+    push DWORD NP_GDT
+    call exception_test
+
 .prompt_loop:
     push DWORD [prompt_len] ; Show prompt
     push prompt
@@ -33,7 +36,6 @@ kmain:
     push input_buf          ; Print input
     call puts               ; The length is alread at the top of the stack
 
-    ud2
     jmp .prompt_loop        ; Loop
 
     ret

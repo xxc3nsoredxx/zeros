@@ -1,4 +1,6 @@
+LD_FEATURE("SANE_EXPR")
 OUTPUT_FORMAT(binary)
+OUTPUT_ARCH(i386)
 
 SECTIONS
 {
@@ -31,27 +33,38 @@ SECTIONS
         *kernel0.o (.multiboot)
     } =0x00
 
-    /* Load GDT before code */
-    .gdt ALIGN(4) :
+    /**
+     * Load GDT before code
+     * VMA: 0x900000
+     *   Physical address because the segments aren't set up yet
+     * LDA: Right after multiboot header
+     */
+    _gdt_start = _mem_base;
+    .gdt _gdt_start : AT(SIZEOF(.multiboot))
     {
-        _gdt_start = _mb_load_addr + .;
         *kernel0.o (.gdt)
     } =0x00
+    _gdt_end = .;
 
     /**
      * Load IDT after GDT
-     * 256 * 8B = 2KiB long
+     * 256 * 8 B = 2 KiB long
+     * VMA: [GDT size]
+     *   Segments will have been set up once IDT structures are accessed
+     * LDA: Right after GDT
      */
-    .idt SIZEOF(.gdt) : AT(LOADADDR(.gdt) + SIZEOF(.gdt))
+    . = SIZEOF(.gdt);
+    .idt ALIGN(8) : AT(LOADADDR(.gdt) + SIZEOF(.gdt))
     {
+        _idt_start = ABSOLUTE(_gdt_start + SIZEOF(.gdt));
         *kernel0.o (.idt)
     } =0x00
 
     /**
-     * .text segment begins at virtual address 0x00001000 (4KiB)
-     * The physical address is 4KiB after start of GDT in RAM
+     * VMA: 0x1000 (4 KiB)
+     * LDA: [GDT + 4 KiB]
      */
-    .text 0x00001000 : AT(LOADADDR(.gdt) + 4K)
+    .text 0x1000 : AT(LOADADDR(.gdt) + 4K)
     {
         /* Multiboot loader jumps to address of kernel0/kstart */
         *kernel0.o (.text)

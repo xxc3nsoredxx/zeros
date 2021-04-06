@@ -11,7 +11,7 @@ MOUNT = /mnt
 AS = nasm
 AFLAGS = -f elf32 -w+all -w+error -w-unknown-warning -i $(INC)/
 LD = i386-elf-ld
-LFLAGS = -M --fatal-warnings
+LFLAGS = -Map=./ --fatal-warnings
 QEMU = qemu-system-i386
 QFLAGS = -curses -drive file=zeros.iso,format=raw -s
 OBJS = interrupts.o kb.o kernel0.o kernel1.o sys.o tests.o vga.o
@@ -50,7 +50,7 @@ $(OBJ)/kernel1.o: kernel1.asm sys.hs tests.hs
 $(OBJ)/sys.o: sys.asm sys.hs kb.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/tests.o: tests.asm tests.hs sys.hs
+$(OBJ)/tests.o: tests.asm tests.hs gdt.hs sys.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/vga.o: vga.asm vga.hs gdt.hs

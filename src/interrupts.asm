@@ -28,12 +28,13 @@ np_int:
     call clear
 
     ; Get the error code
-    movzx eax, WORD [esp]
+    ; Top 16 bits are reserved
+    pop eax
 
     ; Test if selector is for IDT or GDT/LDT
     ; bit 1 set: IDT
     ; bit 1 clear: GDT/LDT
-    bt ax, 1
+    bt  ax, 1
     jnc .gdt_ldt
     ; Print IDT panic message
     ; Push IDT selector
@@ -45,7 +46,22 @@ np_int:
     hlt
 
 .gdt_ldt:
-    ; TODO: GDT/LDT messages
+    ; Test if selector is for GDT or LDT
+    ; bit 2 set: LDT
+    ; bit 2 clear: GDT
+    bt  ax, 2
+    jnc .gdt
+    ; TODO: Implement LDT code
+    hlt
+
+.gdt:
+    ; Print GDT panic message
+    ; Push GDT slector
+    and ax, 0xfff4
+    push eax
+    push DWORD [panic_np_gdt_len]
+    push panic_np_gdt
+    call printf
     hlt
 
 ;;;;;;;;;;;;;;;;;;
@@ -269,6 +285,17 @@ PANIC_COLOR:
 
 panic_np_int:
     db  'PANIC: UNHANDLEABLE INTERRUPT', 0x0a
-    db  'Missing gate: %u'
+    db  'Missing gate: %u', 0x0a
+    db  '   EIP:    %x', 0x0a
+    db  '    CS:    %x', 0x0a
+    db  'EFLAGS:    %x'
 panic_np_int_len:
     dd  $ - panic_np_int
+panic_np_gdt:
+    db  'PANIC: ATTEMPTTED LOAD OF INVALID SEGMENT', 0x0a
+    db  'Bad selector: %u', 0x0a
+    db  '   EIP:    %x', 0x0a
+    db  '    CS:    %x', 0x0a
+    db  'EFLAGS:    %x'
+panic_np_gdt_len:
+    dd  $ - panic_np_gdt
