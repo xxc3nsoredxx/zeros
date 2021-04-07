@@ -171,6 +171,24 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.base_top,        db GDT_MAIN_TSS_BASE_TOP
     iend
 .end:                       ; End of GDT
+.df_stack:                  ; #DF task stack selector (GDT offset = 0x38)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_DF_STACK_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_DF_STACK_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_DF_STACK_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_DF_STACK_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_DF_STACK_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_DF_STACK_BASE_TOP
+    iend
+.df_tss:                    ; #DF task selector (GDT offset = 0x40)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_DF_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_DF_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_DF_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_DF_TSS_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_DF_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_DF_TSS_BASE_TOP
+    iend
 gdt_desc:                   ; GDT descriptor
     istruc  gdt_desc_t
         at gdt_desc_t.size,     dw gdt.end - gdt - 1
@@ -207,7 +225,7 @@ idt:                        ; Start of the IDT
 .pm_df:                     ; Double Fault Exception (0x08)
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0    ; Not used for task gates
-        at idt_entry_t.selector,    dw GDT_CODE_INDEX
+        at idt_entry_t.selector,    dw GDT_DF_TSS
         at idt_entry_t.zero,        db 0
         at idt_entry_t.type_attr,   db TASK_GATE
         at idt_entry_t.off_top,     dw 0    ; Not used for task gates
@@ -309,7 +327,38 @@ idt_desc:                   ; IDT descriptor
         at idt_desc_t.idt,  dd _idt_start
     iend
 
+; Newer TSS's at the top
 section .tss progbits alloc noexec align=16
+df_tss:                     ; TSS for double fault task
+    istruc tss_t
+        at tss_t.backlink,  dw 0
+        at tss_t.esp0,      dd 0x100000
+        at tss_t.ss0,       dw GDT_DF_STACK
+        at tss_t.esp1,      dd 0
+        at tss_t.ss1,       dw 0
+        at tss_t.esp2,      dd 0
+        at tss_t.ss2,       dw 0
+        at tss_t.cr3,       dd 0
+        at tss_t.eip,       dd df_int
+        at tss_t.eflags,    dd 0
+        at tss_t.eax,       dd 0
+        at tss_t.ecx,       dd 0
+        at tss_t.edx,       dd 0
+        at tss_t.ebx,       dd 0
+        at tss_t.esp,       dd 0x100000
+        at tss_t.ebp,       dd 0
+        at tss_t.esi,       dd 0
+        at tss_t.edi,       dd 0
+        at tss_t.es,        dw GDT_DATA_INDEX
+        at tss_t.cs,        dw GDT_CODE_INDEX
+        at tss_t.ss,        dw GDT_DF_STACK
+        at tss_t.ds,        dw GDT_DATA_INDEX
+        at tss_t.fs,        dw GDT_DATA_INDEX
+        at tss_t.gs,        dw GDT_VRAM_INDEX
+        at tss_t.trap,      db 0
+        at tss_t.io_map,    dw 0x68 ; Unused - set offset to 1 B after TSS
+    iend
+
 main_tss:                   ; TSS for main kernel task
     istruc tss_t
         at tss_t.backlink,  dw 0
@@ -337,7 +386,7 @@ main_tss:                   ; TSS for main kernel task
         at tss_t.fs,        dw 0
         at tss_t.gs,        dw 0
         at tss_t.trap,      db 0
-        at tss_t.io_map,    dw 0
+        at tss_t.io_map,    dw 0x68 ; Unused - set offset to 1 B after TSS
     iend
 
 section .multiboot progbits align=4

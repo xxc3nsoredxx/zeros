@@ -69,6 +69,7 @@ struc tss_t
         alignb  2           ; Reserved - set to 0
     .io_map:                ; I/O map base address
         resw    1
+        alignb  16          ; Align to 16 bytes
 endstruc
 
 %endif ; TSS_H_20210406_175625

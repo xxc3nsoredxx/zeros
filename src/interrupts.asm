@@ -41,6 +41,7 @@ ud_int:
 df_int:
     ; Disable cursor
     ; Set bit 5 of Cursor Start to disable the dursor
+    jmp $
     mov dx, VGA_CRTC_ADDR
     mov al, VGA_CRTC_CURS_START
     out dx, al

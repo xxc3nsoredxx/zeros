@@ -13,7 +13,10 @@ kmain:
     ; Tests
     call printf_test
 
-    push DWORD UD_TEST
+    jmp $
+    call 0x40:0
+    jmp $
+    push DWORD DF_TEST
     call exception_test
 
 .prompt_loop:

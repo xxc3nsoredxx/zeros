@@ -24,6 +24,7 @@ SECTIONS
      */
     _mb_entry_addr = _mb_load_addr + LOADADDR(.text);
     /* Virtual address of start of code */
+    /* _code_vma_start = 0x1000; */
     _code_vma_start = 0x1000;
 
     /**
@@ -46,7 +47,6 @@ SECTIONS
     {
         *kernel0.o (.gdt)
     } =0x00
-    _gdt_end = .;
 
     /**
      * Load IDT after GDT
@@ -54,11 +54,12 @@ SECTIONS
      * VMA: [GDT size]
      *   Segments will have been set up once IDT structures are accessed
      * LDA: Right after GDT
+     * Align to 16 B
      */
-    . = SIZEOF(.gdt);
-    .idt ALIGN(8) : AT(LOADADDR(.gdt) + SIZEOF(.gdt))
+    . = ALIGN(SIZEOF(.gdt), 16);
+    .idt ALIGN(16) : AT(ALIGN(LOADADDR(.gdt) + SIZEOF(.gdt), 16))
     {
-        _idt_start = ABSOLUTE(_gdt_start + SIZEOF(.gdt));
+        _idt_start = ABSOLUTE(_mem_base + .);
         *kernel0.o (.idt)
     } =0x00
 
@@ -68,7 +69,7 @@ SECTIONS
      *      0x1000 - n * 0x70
      * LDA: Right before code
      */
-    _total_tss_size = 1 * 0x70;
+    _total_tss_size = 2 * 0x70;
     _tss_start = _code_vma_start - _total_tss_size;
     .tss _tss_start : AT(LOADADDR(.gdt) + 4K - _total_tss_size)
     {

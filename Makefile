@@ -20,7 +20,7 @@ OBJS = interrupts.o kb.o kernel0.o kernel1.o sys.o tests.o vga.o
 all: kernel.bin
 
 relink: $(OBJS)
-	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $(BIN)/kernel.bin
+	$(LD) $(LFLAGS) -T kernel.ld $^ -o $(BIN)/kernel.bin
 
 install: all
 	cp $(BIN)/kernel.bin $(MOUNT)/boot/
@@ -33,7 +33,7 @@ runx:
 	startx ./qemu_zeros.xinitrc
 
 $(BIN)/kernel.bin: $(OBJS)
-	$(LD) $(LFLAGS) -T $(SRC)/kernel.ld $^ -o $@
+	$(LD) $(LFLAGS) -T kernel.ld $^ -o $@
 
 $(OBJ)/interrupts.o: interrupts.asm idt.hs kb.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
