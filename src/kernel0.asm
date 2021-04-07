@@ -6,6 +6,7 @@
 %include "idt.hs"
 %include "kb.hs"
 %include "multiboot.hs"
+%include "tss.hs"
 %include "vga.hs"
 
 global kstart               ; Make kstart visible
@@ -32,6 +33,10 @@ kstart:
     mov fs, ax
     mov ax, GDT_VRAM_INDEX  ; Save the VRAM segment in GS
     mov gs, ax
+
+    ; Load the task-state segment for the main kernel task
+    mov ax, GDT_MAIN_TSS
+    ltr ax
 
     ; Reprogram the PIC to use interrupts 0x20 to 0x2F as to not interfere
     ; with hardware interrupts 0 to 31
@@ -147,7 +152,7 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_DATA_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_DATA_BASE_TOP
     iend
-.not_present:           ; Intentionally not present (GDT offset = 0x28)
+.not_present:               ; Intentionally not present (GDT offset = 0x28)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_DATA_LIM_BOT
         at gdt_entry_t.base_bot,        dw GDT_DATA_BASE_BOT
@@ -155,6 +160,15 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.access,          db GDT_DATA_ACCESS & 0x7f
         at gdt_entry_t.flags_lim,       db GDT_DATA_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_DATA_BASE_TOP
+    iend
+.main_tss:                  ; Main task selector (GDT offset = 0x30)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_MAIN_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_MAIN_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_MAIN_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_MAIN_TSS_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_MAIN_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_MAIN_TSS_BASE_TOP
     iend
 .end:                       ; End of GDT
 gdt_desc:                   ; GDT descriptor
@@ -183,7 +197,22 @@ idt:                        ; Start of the IDT
         at idt_entry_t.type_attr,   db INT_GATE
         at idt_entry_t.off_top,     dw 0xFFFF   ; Filled in code
     iend
-%rep 4                      ; Null entries
+    istruc  idt_entry_t     ; Null entry
+        at idt_entry_t.off_bot,     dw 0
+        at idt_entry_t.selector,    dw 0
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
+        at idt_entry_t.off_top,     dw 0
+    iend
+.pm_df:                     ; Double Fault Exception (0x08)
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0    ; Not used for task gates
+        at idt_entry_t.selector,    dw GDT_CODE_INDEX
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db TASK_GATE
+        at idt_entry_t.off_top,     dw 0    ; Not used for task gates
+    iend
+%rep 2                      ; Null entries
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
@@ -247,7 +276,7 @@ idt:                        ; Start of the IDT
     iend
 %endrep
 ; Rest of user-defined interrupts (0x30 - 0xff)
-.not_present:               ; Intentionally not present (0x30)
+.not_present:               ; Call to trigger IDT case of #NP (0x30)
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
@@ -255,8 +284,16 @@ idt:                        ; Start of the IDT
         at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
         at idt_entry_t.off_top,     dw 0
     iend
+.double_fault:              ; Call to trigger a double fault (0x31)
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0xFFFF
+        at idt_entry_t.selector,    dw GDT_NOT_PRESENT
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db INT_GATE
+        at idt_entry_t.off_top,     dw 0xFFFF
+    iend
 .rest:                      ; Rest of the IDT (null entries for now)
-%rep 207
+%rep 206
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
@@ -270,6 +307,37 @@ idt_desc:                   ; IDT descriptor
     istruc  idt_desc_t
         at idt_desc_t.size, dw idt.end - idt - 1
         at idt_desc_t.idt,  dd _idt_start
+    iend
+
+section .tss progbits alloc noexec align=16
+main_tss:                   ; TSS for main kernel task
+    istruc tss_t
+        at tss_t.backlink,  dw 0
+        at tss_t.esp0,      dd 0x800000
+        at tss_t.ss0,       dw GDT_STACK_INDEX
+        at tss_t.esp1,      dd 0
+        at tss_t.ss1,       dw 0
+        at tss_t.esp2,      dd 0
+        at tss_t.ss2,       dw 0
+        at tss_t.cr3,       dd 0
+        at tss_t.eip,       dd 0
+        at tss_t.eflags,    dd 0
+        at tss_t.eax,       dd 0
+        at tss_t.ecx,       dd 0
+        at tss_t.edx,       dd 0
+        at tss_t.ebx,       dd 0
+        at tss_t.esp,       dd 0
+        at tss_t.ebp,       dd 0
+        at tss_t.esi,       dd 0
+        at tss_t.edi,       dd 0
+        at tss_t.es,        dw 0
+        at tss_t.cs,        dw 0
+        at tss_t.ss,        dw 0
+        at tss_t.ds,        dw 0
+        at tss_t.fs,        dw 0
+        at tss_t.gs,        dw 0
+        at tss_t.trap,      db 0
+        at tss_t.io_map,    dw 0
     iend
 
 section .multiboot progbits align=4

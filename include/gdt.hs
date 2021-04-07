@@ -12,11 +12,19 @@ struc   gdt_entry_t
         alignb  1           ; 7:    Present: always 1
                             ; 5-6:  Ring level: 0 (kernel), 3 (user)
                             ; 4:    Type: 0 (system), 1 (code/data)
-                            ; 3:    Execute: 0 (no exec), 1 (exec)
+                            ; System (selector):
+                            ; 3:    Size: 0 (16 bit), 1 (32 bit)
+                            ; 2:    Type: 0 (selector), 1 (gate)
+                            ; 0-1:  Selector type:  0:  Reserved
+                            ;                       1:  TSS (available)
+                            ;                       2:  LDT ("16 bit"), Reserved ("32 bit")
+                            ;                       3:  TSS (busy)
+                            ; Code/Data:
+                            ; 3:    Execute: 0 (no exec/data), 1 (exec/code)
                             ; 2:    Direction (data): 0 (grow up), 1 (grow down)
                             ; 2:    Conform (code): 0 (ring), 1 (equal/lower ring)
-                            ; 1:    Readable (code): 0 (no), 1 (yes) (never write)
                             ; 1:    Writable (data): 0 (no), 1 (yes) (always read)
+                            ; 1:    Readable (code): 0 (no), 1 (yes) (never write)
                             ; 0:    Accessed: 0 (set to 1 by CPU when accessed)
     .flags_lim: resb 1      ; Flags and top nybble of limit
         alignb  1           ; 7:    Granularity: 0 (bytewise), 1 (4KiB pagewise)
@@ -89,9 +97,9 @@ endstruc
                                     ; = 0x100000 * 4KiB
                                     ; = 2^20 * 4KiB
                                     ; = 1Mi * 4KiB
-                                    ; = 4GiB (really 9MiB + 4GiB)
-%assign GDT_CODE_BASE_BOT   0       ; Code base: 0x00900000
-%assign GDT_CODE_BASE_TOP_BOT   0x90
+                                    ; = 4GiB (really 10MiB + 4GiB)
+%assign GDT_CODE_BASE_BOT   0       ; Code base: 0x00a00000
+%assign GDT_CODE_BASE_TOP_BOT   0xa0
 %assign GDT_CODE_ACCESS     0b10011010
 ;                             |\|||||+- Set by CPU
 ;                             | ||||+-- Readable
@@ -112,9 +120,9 @@ endstruc
                                     ; = 0x100000 * 4KiB
                                     ; = 2^20 * 4KiB
                                     ; = 1Mi * 4KiB
-                                    ; = 4GiB (really 9MiB + 4GiB)
-%assign GDT_DATA_BASE_BOT   0       ; Data base: 0x00900000
-%assign GDT_DATA_BASE_TOP_BOT   0x90
+                                    ; = 4GiB (really 10MiB + 4GiB)
+%assign GDT_DATA_BASE_BOT   0       ; Data base: 0x00a00000
+%assign GDT_DATA_BASE_TOP_BOT   0xa0
 %assign GDT_DATA_ACCESS     0b10010010
 ;                             |\|||||+- Set by CPU
 ;                             | ||||+-- Writable
@@ -130,12 +138,37 @@ endstruc
 ;                             |+------- 32 bit
 ;                             +-------- Pagewise
 %assign GDT_DATA_BASE_TOP   0
+%assign GDT_MAIN_TSS_LIM_BOT        0x67    ; Set limit to 104 B (relative to base)
+                                            ; (0 -> 0x67)
+                                            ; = 0x68 B
+                                            ; = 104 B
+%assign GDT_MAIN_TSS_BASE_BOT       0x0f90  ; TSS base: 0x00a00f90
+                                            ; [code] - 0x67 (aligned down to 16 B)
+                                            ; Effective size: 0x70
+%assign GDT_MAIN_TSS_BASE_TOP_BOT   0xa0
+%assign GDT_MAIN_TSS_ACCESS         0b10001001
+;                                     |\||||\|
+;                                     | |||| +- TSS (available)
+;                                     | |||+--- Segment selector
+;                                     | ||+---- 32 bit TSS
+;                                     | |+----- System
+;                                     | +------ Ring 0
+;                                     +-------- Present
+%assign GDT_MAIN_TSS_FLAGS_LIM      0b01000000
+;                                     ||||+---- Top nybble of limit
+;                                     |||+----- OS reserved (unused)
+;                                     ||+------ Reserved
+;                                     |+------- 32 bit
+;                                     +-------- Bytewise
+%assign GDT_MAIN_TSS_BASE_TOP       0
+; TODO: double fault TSS descriptor
 
 %assign GDT_VRAM_INDEX  0x08
 %assign GDT_STACK_INDEX 0x10
 %assign GDT_CODE_INDEX  0x18
 %assign GDT_DATA_INDEX  0x20
 %assign GDT_NOT_PRESENT 0x28
+%assign GDT_MAIN_TSS    0x30
 
 %endif
 

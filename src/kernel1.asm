@@ -13,7 +13,7 @@ kmain:
     ; Tests
     call printf_test
 
-    push DWORD UD
+    push DWORD UD_TEST
     call exception_test
 
 .prompt_loop:

@@ -17,6 +17,10 @@ exception_test:
 .ud:
     ud2
 
+    ; Test #DF
+.df:
+    int 0x31
+
     ; Test #NP, IDT selector
 .np_idt:
     int 0x30
@@ -28,6 +32,7 @@ exception_test:
 
 .jump_table:
     dd  .ud
+    dd  .df
     dd  .np_idt
     dd  .np_gdt
 

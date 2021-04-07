@@ -4,8 +4,8 @@ OUTPUT_ARCH(i386)
 
 SECTIONS
 {
-    /* OS stuff starts at virtual address 9 MiB */
-    _mem_base = 0x00900000;
+    /* OS stuff starts at virtual address 10 MiB */
+    _mem_base = 0x00a00000;
     /* Address where the multiboot header is to be loaded to */
     _mb_header_addr = _mem_base - SIZEOF(.multiboot);
     /* Address where the (gdt + idt +) text + data segments start */
@@ -23,6 +23,8 @@ SECTIONS
      * of the .text section
      */
     _mb_entry_addr = _mb_load_addr + LOADADDR(.text);
+    /* Virtual address of start of code */
+    _code_vma_start = 0x1000;
 
     /**
      * Multiboot header is at the front of the image
@@ -34,8 +36,8 @@ SECTIONS
     } =0x00
 
     /**
-     * Load GDT before code
-     * VMA: 0x900000
+     * Load GDT first
+     * VMA: 0xa00000
      *   Physical address because the segments aren't set up yet
      * LDA: Right after multiboot header
      */
@@ -61,10 +63,23 @@ SECTIONS
     } =0x00
 
     /**
+     * Load task-state segments right before code
+     * VMA: 0x1000 - n * [TSS size aligned to 16 B]
+     *      0x1000 - n * 0x70
+     * LDA: Right before code
+     */
+    _total_tss_size = 1 * 0x70;
+    _tss_start = _code_vma_start - _total_tss_size;
+    .tss _tss_start : AT(LOADADDR(.gdt) + 4K - _total_tss_size)
+    {
+        *kernel0.o (.tss)
+    } =0x00
+
+    /**
      * VMA: 0x1000 (4 KiB)
      * LDA: [GDT + 4 KiB]
      */
-    .text 0x1000 : AT(LOADADDR(.gdt) + 4K)
+    .text _code_vma_start : AT(LOADADDR(.gdt) + 4K)
     {
         /* Multiboot loader jumps to address of kernel0/kstart */
         *kernel0.o (.text)

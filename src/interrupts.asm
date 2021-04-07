@@ -12,6 +12,7 @@ section .text
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Invalid Opcode Exception
+; Class: fault
 ; Error code: no
 ud_int:
     ; Disable cursor
@@ -28,13 +29,38 @@ ud_int:
     mov [color], al
     call clear
 
-    ; Print UD panic message
+    ; Print #UD panic message
     push DWORD [panic_ud_int_len]
     push panic_ud_int
     call printf
     hlt
 
+; Double Fault Exception
+; Class: abort
+; Error code: 0
+df_int:
+    ; Disable cursor
+    ; Set bit 5 of Cursor Start to disable the dursor
+    mov dx, VGA_CRTC_ADDR
+    mov al, VGA_CRTC_CURS_START
+    out dx, al
+    mov dx, VGA_CRTC_DATA
+    mov al, 0x10
+    out dx, al
+
+    ; Set the color scheme
+    mov al, [PANIC_COLOR]
+    mov [color], al
+    call clear
+
+    ; Print #DF panic message
+    push DWORD [panic_df_int_len]
+    push panic_df_int
+    call printf
+    hlt
+
 ; Segment Not Present
+; Class: fault
 ; Error code: yes
 np_int:
     ; Disable cursor
@@ -314,6 +340,10 @@ panic_ud_int:
     db  'EFLAGS:    %x'
 panic_ud_int_len:
     dd  $ - panic_ud_int
+panic_df_int:
+    db  'PANIC: !!! DOUBLE FAULT !!!'
+panic_df_int_len:
+    dd  $ - panic_df_int
 panic_np_int:
     db  'PANIC: UNHANDLEABLE INTERRUPT', 0x0a
     db  'Missing gate: %u', 0x0a
