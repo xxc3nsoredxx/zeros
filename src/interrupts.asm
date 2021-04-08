@@ -39,10 +39,11 @@ ud_int:
 ; Class: abort
 ; Error code: 0
 df_int:
+    ; Disable interrupts so the handler isn't interrupted
+    cli
+
     ; Disable cursor
     ; Set bit 5 of Cursor Start to disable the dursor
-    cli
-    jmp $
     mov dx, VGA_CRTC_ADDR
     mov al, VGA_CRTC_CURS_START
     out dx, al

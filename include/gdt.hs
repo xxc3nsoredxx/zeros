@@ -163,7 +163,6 @@ endstruc
 ;                                     |+------- 32 bit
 ;                                     +-------- Bytewise
 %assign GDT_MAIN_TSS_BASE_TOP       0
-; TODO: double fault task stack
 ; Expand-up segment because stack can be statically sized
 %assign GDT_DF_STACK_LIM_BOT        0x00ff  ; Set limit to 1 MiB (relative to base)
                                             ; (0 -> 0x000ff) * 4 KiB pages
@@ -186,38 +185,6 @@ endstruc
 ;                                     |+------- 32 bit
 ;                                     +-------- Pagewise
 %assign GDT_DF_STACK_BASE_TOP       0
-;%assign GDT_DF_STACK_LIM_BOT        0x08ff  ; Top of stack (highest invalid addr < base)
-                                            ; Base - length - 1
-                                            ; = 10 MiB - 1 MiB - 1
-                                            ; = 9 MiB - 1
-                                            ; = 0x008fffff
-                                            ; = 0x008ff * 4 KiB
-;OLD %assign GDT_DF_STACK_BASE_BOT       0xffff  ; Base address (bottom of stack)
-;%assign GDT_DF_STACK_BASE_BOT       0x0000  ; Base address (bottom of stack)
-;OLD %assign GDT_DF_STACK_BASE_TOP_BOT   0x9f    ; GDT base = start address + length - 4GiB
-;%assign GDT_DF_STACK_BASE_TOP_BOT   0x90    ; GDT base = start address + length - 4GiB
-                                            ; = 9 MiB + 1 MiB - 4 GiB
-                                            ; = 0x00900000 + 0x00100000 - 0x1 00000000
-                                            ; = 0x0 00a00000 - 0x1 00000000
-                                            ; = 0x0 00a00000 + 0xf 00000000
-                                            ; = 0xf 00a00000
-                                            ; = 0xf 009fffff
-;%assign GDT_DF_STACK_ACCESS         0b10010110
-;                                     |\|||||+- Set by CPU
-;                                     | ||||+-- Readable
-;                                     | |||+--- Grows down
-;                                     | ||+---- Not executable
-;                                     | |+----- Code/Data (data)
-;                                     | +------ Ring 0
-;                                     +-------- Present
-;%assign GDT_DF_STACK_FLAGS_LIM      0b11000000
-;                                     ||||+---- Top nybble of limit
-;                                     |||+----- OS reserved (unused)
-;                                     ||+------ Reserved
-;                                     |+------- 32 bit
-;                                     +-------- Pagewise
-;%assign GDT_DF_STACK_BASE_TOP       0
-; TODO: double fault TSS descriptor
 %assign GDT_DF_TSS_LIM_BOT      0x67    ; Set limit to 104 B (relative to base)
                                         ; (0 -> 0x67)
                                         ; = 0x68 B

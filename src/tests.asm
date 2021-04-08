@@ -19,8 +19,12 @@ exception_test:
 
     ; Test #DF
 .df:
-    mov esp, 0
-    int 0x31
+    mov esp, 0              ; Set stack pointer to bad value
+    pop eax                 ; pop results in #SS being triggered. #SS pushes an
+                            ; error code onto the stack. An invalid stack
+                            ; triggers a second #SS. #SS is a contributory
+                            ; exception, and two contributory exceptions
+                            ; trigger a #DF.
 
     ; Test #NP, IDT selector
 .np_idt:

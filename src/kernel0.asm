@@ -323,16 +323,8 @@ idt:                        ; Start of the IDT
         at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
         at idt_entry_t.off_top,     dw 0
     iend
-.double_fault:              ; Call to trigger a double fault (0x31)
-    istruc  idt_entry_t
-        at idt_entry_t.off_bot,     dw 0xFFFF
-        at idt_entry_t.selector,    dw GDT_CODE_INDEX
-        at idt_entry_t.zero,        db 0
-        at idt_entry_t.type_attr,   db INT_GATE
-        at idt_entry_t.off_top,     dw 0xFFFF
-    iend
 .rest:                      ; Rest of the IDT (null entries for now)
-%rep 206
+%rep 207
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0

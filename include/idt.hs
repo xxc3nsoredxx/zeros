@@ -40,7 +40,7 @@ struc   idt_desc_t
         alignb  4
 endstruc
 
-%assign TASK_GATE       0b10001010  ; Attribute byte for task gates
+%assign TASK_GATE       0b10000101  ; Attribute byte for task gates
 %assign INT_GATE        0b10001110  ; Attribute byte for interrupt gates
 %assign IDT_NOT_PRESENT 0b00001110  ; Attribute byte for unused interrupts
 
