@@ -5,6 +5,7 @@
 extern ud_int
 extern df_int
 extern np_int
+extern gp_int
 
 ; PIC handlers
 extern master_null

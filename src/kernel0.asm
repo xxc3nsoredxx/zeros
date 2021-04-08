@@ -70,6 +70,12 @@ kstart:
     shr eax, 16
     mov [idt.pm_np + idt_entry_t.off_top], ax
 
+    ; Fill in #GP offsets
+    mov eax, gp_int
+    mov [idt.pm_gp + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.pm_gp + idt_entry_t.off_top], ax
+
     ; Fill in IRQ 0 offsets
     mov eax, master_null
     mov [idt.irq0 + idt_entry_t.off_bot], ax
@@ -170,7 +176,6 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_MAIN_TSS_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_MAIN_TSS_BASE_TOP
     iend
-.end:                       ; End of GDT
 .df_stack:                  ; #DF task stack selector (GDT offset = 0x38)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_DF_STACK_LIM_BOT
@@ -189,6 +194,7 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_DF_TSS_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_DF_TSS_BASE_TOP
     iend
+.end:                       ; End of GDT
 gdt_desc:                   ; GDT descriptor
     istruc  gdt_desc_t
         at gdt_desc_t.size,     dw gdt.end - gdt - 1
@@ -247,7 +253,22 @@ idt:                        ; Start of the IDT
         at idt_entry_t.type_attr,   db INT_GATE
         at idt_entry_t.off_top,     dw 0xFFFF   ; Filled in code
     iend
-%rep 20                     ; Null entries
+    istruc  idt_entry_t     ; Null entry
+        at idt_entry_t.off_bot,     dw 0
+        at idt_entry_t.selector,    dw 0
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
+        at idt_entry_t.off_top,     dw 0
+    iend
+.pm_gp:
+    istruc  idt_entry_t     ; General Protection Exception (0x0d)
+        at idt_entry_t.off_bot,     dw 0xFFFF   ; Filled in code
+        at idt_entry_t.selector,    dw GDT_CODE_INDEX
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db INT_GATE
+        at idt_entry_t.off_top,     dw 0xFFFF   ; Filled in code
+    iend
+%rep 18                     ; Null entries
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
@@ -305,7 +326,7 @@ idt:                        ; Start of the IDT
 .double_fault:              ; Call to trigger a double fault (0x31)
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0xFFFF
-        at idt_entry_t.selector,    dw GDT_NOT_PRESENT
+        at idt_entry_t.selector,    dw GDT_CODE_INDEX
         at idt_entry_t.zero,        db 0
         at idt_entry_t.type_attr,   db INT_GATE
         at idt_entry_t.off_top,     dw 0xFFFF

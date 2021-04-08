@@ -41,6 +41,7 @@ ud_int:
 df_int:
     ; Disable cursor
     ; Set bit 5 of Cursor Start to disable the dursor
+    cli
     jmp $
     mov dx, VGA_CRTC_ADDR
     mov al, VGA_CRTC_CURS_START
@@ -112,6 +113,72 @@ np_int:
     push eax
     push DWORD [panic_np_gdt_len]
     push panic_np_gdt
+    call printf
+    hlt
+
+; General Protection Exception
+; Class: fault
+; Error code: yes
+gp_int:
+    ; Disable cursor
+    ; Set bit 5 of Cursor Start to disable the dursor
+    mov dx, VGA_CRTC_ADDR
+    mov al, VGA_CRTC_CURS_START
+    out dx, al
+    mov dx, VGA_CRTC_DATA
+    mov al, 0x10
+    out dx, al
+
+    ; Set the color scheme
+    mov al, [PANIC_COLOR]
+    mov [color], al
+    call clear
+
+    ; Get the error code
+    ; Top 16 bits are reserved
+    pop eax
+
+    ; If error code is 0, no selector
+    cmp eax, 0
+    jz  .no_error
+
+    ; Test if selector is for IDT or GDT/LDT
+    ; bit 1 set: IDT
+    ; bit 1 clear: GDT/LDT
+    bt  ax, 1
+    jnc .gdt_ldt
+    ; Print IDT panic message
+    ; Push IDT selector
+    shr eax, 3
+    push eax
+    push DWORD [panic_gp_idt_len]
+    push panic_gp_idt
+    call printf
+    hlt
+
+.gdt_ldt:
+    ; Test if selector is for GDT or LDT
+    ; bit 2 set: LDT
+    ; bit 2 clear: GDT
+    bt  ax, 2
+    jnc .gdt
+    ; TODO: Implement LDT code
+    hlt
+
+.gdt:
+    ; Print GDT panic message
+    ; Push GDT slector
+    and ax, 0xfff4
+    push eax
+    push DWORD [panic_gp_gdt_len]
+    push panic_gp_gdt
+    call printf
+    hlt
+
+.no_error:
+    ; Print no error panic message
+    push DWORD [panic_gp_no_error_len]
+    push panic_gp_no_error
     call printf
     hlt
 
@@ -361,3 +428,26 @@ panic_np_gdt:
     db  'EFLAGS:    %x'
 panic_np_gdt_len:
     dd  $ - panic_np_gdt
+panic_gp_idt:
+    db  'PANIC: PROTECTION VIOLATION - IDT', 0x0a
+    db  'Bad gate: %u', 0x0a
+    db  '   EIP:    %x', 0x0a
+    db  '    CS:    %x', 0x0a
+    db  'EFLAGS:    %x'
+panic_gp_idt_len:
+    dd  $ - panic_gp_idt
+panic_gp_gdt:
+    db  'PANIC: PROTECTION VIOLATION - GDT', 0x0a
+    db  'Bad selector: %u', 0x0a
+    db  '   EIP:    %x', 0x0a
+    db  '    CS:    %x', 0x0a
+    db  'EFLAGS:    %x'
+panic_gp_gdt_len:
+    dd  $ - panic_gp_gdt
+panic_gp_no_error:
+    db  'PANIC: PROTECTION VIOLATION', 0x0a
+    db  '   EIP:    %x', 0x0a
+    db  '    CS:    %x', 0x0a
+    db  'EFLAGS:    %x'
+panic_gp_no_error_len:
+    dd  $ - panic_gp_no_error

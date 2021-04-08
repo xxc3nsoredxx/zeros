@@ -13,9 +13,11 @@ kmain:
     ; Tests
     call printf_test
 
-    jmp $
+    ; push 0x11223344
+    ; push 0x11223344
+    ; jmp $
     call 0x40:0
-    jmp $
+    ;jmp $
     push DWORD DF_TEST
     call exception_test
 

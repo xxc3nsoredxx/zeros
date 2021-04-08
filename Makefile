@@ -13,7 +13,7 @@ AFLAGS = -f elf32 -w+all -w+error -w-unknown-warning -i $(INC)/
 LD = i386-elf-ld
 LFLAGS = -Map=./ --fatal-warnings
 QEMU = qemu-system-i386
-QFLAGS = -curses -drive file=zeros.iso,format=raw -s
+QFLAGS = -curses -drive file=zeros.iso,format=raw -s -enable-kvm
 OBJS = interrupts.o kb.o kernel0.o kernel1.o sys.o tests.o vga.o
 
 .PHONY: all relink install run

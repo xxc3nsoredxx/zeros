@@ -19,6 +19,7 @@ exception_test:
 
     ; Test #DF
 .df:
+    mov esp, 0
     int 0x31
 
     ; Test #NP, IDT selector
