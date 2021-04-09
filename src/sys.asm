@@ -126,6 +126,8 @@ clear:
 ; Fun fact:
 ;   This has been ranked as The World's Best (TM) printf implementation!
 ;   (cert. pend.)
+; %s: prints a string
+;     requires 2 arguments: pointer to string, length of string
 ; %u: prints a u32 as unsigned decimal
 ; %x: prints a u32 as hex
 ; %%: prints a '%'
@@ -167,6 +169,21 @@ printf:
     ; Test for end-of-string (incomplete format)
     cmp esi, edi
     jz  .done
+
+.s:
+    ; Test for %s
+    cmp BYTE [esi], 's'
+    jnz .u
+    ; Print the string
+    ; Contents in stack are: first pointer, then length
+    mov ecx, [ebp + ebx*4 + 20] ; Get the length of the string
+    push ecx
+    mov ecx, [ebp + ebx*4 + 16] ; Get the pointer to the string
+    push ecx
+    call puts
+    ; Track nymber of format arguments on the stack
+    add ebx, 2
+    jmp .next
 
 .u:
     ; Test for %u

@@ -3,11 +3,13 @@
 
 %include "tests.hs"
 %include "gdt.hs"
+%include "panic.hs"
 %include "sys.hs"
 
 section .text
 ; NO_RET exception_test (u32 exception)
 ; Trigger an exception
+; Uses the same selectors as the panic function
 exception_test:
     ; Get index into jump table
     mov eax, [esp + 4]      ; Not [ebp + 8], no stack frame created
@@ -35,11 +37,30 @@ exception_test:
     mov ax, GDT_NOT_PRESENT
     mov es, ax
 
+    ; Test #GP, IDT selector
+.gp_idt:
+    int 0x31
+
+    ; Test #GP, GDT selector
+.gp_gdt:
+    jmp GDT_DATA_INDEX:$
+
+    ; Test #GP, general case
+.gp_gen:
+    db 0xf3, 0xf3, 0xf3, 0xf3   ; Instruction length over 15 B causes a
+    db 0xf3, 0xf3, 0xf3, 0xf3   ; "general" #GP. This block is 15x rep nop.
+    db 0xf3, 0xf3, 0xf3, 0xf3   ; Has to be written by hand because NASM
+    db 0xf3, 0xf3, 0xf3         ; does _not_ want to assemble it. And for good
+    nop                         ; reason lol ;)
+
 .jump_table:
     dd  .ud
     dd  .df
     dd  .np_idt
     dd  .np_gdt
+    dd  .gp_idt
+    dd  .gp_gdt
+    dd  .gp_gen
 
 ; void printf_test (void)
 ; Basic printf test
@@ -83,6 +104,20 @@ printf_test:
     push printf_test7
     call printf
 
+    ; Test %s
+    push DWORD [printf_test9_len]
+    push printf_test9
+    push DWORD [printf_test8_len]
+    push printf_test8
+    call printf
+
+    ; Test %s with format in the printed string
+    push DWORD [printf_test3_len]
+    push printf_test3
+    push DWORD [printf_test10_len]
+    push printf_test10
+    call printf
+
     ret
 
 section .rodata
@@ -114,3 +149,15 @@ printf_test7:
     db  '0x%x (%%x) in (unsigned) decimal: %u (%%u)', 0x0a
 printf_test7_len:
     dd  $ - printf_test7
+printf_test8:
+    db  'Test printing string: %s', 0x0a
+printf_test8_len:
+    dd  $ - printf_test8
+printf_test9:
+    db  'Printed with format :)'
+printf_test9_len:
+    dd  $ - printf_test9
+printf_test10:
+    db  'String with formats: %s'
+printf_test10_len:
+    dd  $ - printf_test10

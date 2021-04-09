@@ -1,6 +1,7 @@
     ; Kernel 1
     bits    32
 
+%include "panic.hs"
 %include "sys.hs"
 %include "tests.hs"
 
@@ -13,7 +14,7 @@ kmain:
     ; Tests
     call printf_test
 
-    push DWORD DF_TEST
+    push DWORD GP_GEN_PANIC
     call exception_test
 
 .prompt_loop:

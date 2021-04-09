@@ -323,8 +323,16 @@ idt:                        ; Start of the IDT
         at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
         at idt_entry_t.off_top,     dw 0
     iend
+.gp_idt:                    ; Call to trigger IDT case of #GP (0x31)
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0
+        at idt_entry_t.selector,    dw 0
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db 0
+        at idt_entry_t.off_top,     dw 0
+    iend
 .rest:                      ; Rest of the IDT (null entries for now)
-%rep 207
+%rep 206
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0

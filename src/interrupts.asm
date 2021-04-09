@@ -3,7 +3,7 @@
 
 %include "idt.hs"
 %include "kb.hs"
-%include "sys.hs"
+%include "panic.hs"
 %include "vga.hs"
 
 section .text
@@ -15,25 +15,8 @@ section .text
 ; Class: fault
 ; Error code: no
 ud_int:
-    ; Disable cursor
-    ; Set bit 5 of Cursor Start to disable the dursor
-    mov dx, VGA_CRTC_ADDR
-    mov al, VGA_CRTC_CURS_START
-    out dx, al
-    mov dx, VGA_CRTC_DATA
-    mov al, 0x10
-    out dx, al
-
-    ; Set the color scheme
-    mov al, [PANIC_COLOR]
-    mov [color], al
-    call clear
-
-    ; Print #UD panic message
-    push DWORD [panic_ud_int_len]
-    push panic_ud_int
-    call printf
-    hlt
+    push DWORD UD_PANIC
+    call panic
 
 ; Double Fault Exception
 ; Class: abort
@@ -42,44 +25,18 @@ df_int:
     ; Disable interrupts so the handler isn't interrupted
     cli
 
-    ; Disable cursor
-    ; Set bit 5 of Cursor Start to disable the dursor
-    mov dx, VGA_CRTC_ADDR
-    mov al, VGA_CRTC_CURS_START
-    out dx, al
-    mov dx, VGA_CRTC_DATA
-    mov al, 0x10
-    out dx, al
+    ; Push temporary values
+    push 0x11223344         ; eflags
+    push DWORD 0x42         ; cs
+    push 0xdeadc0de         ; eip
 
-    ; Set the color scheme
-    mov al, [PANIC_COLOR]
-    mov [color], al
-    call clear
-
-    ; Print #DF panic message
-    push DWORD [panic_df_int_len]
-    push panic_df_int
-    call printf
-    hlt
+    push DF_PANIC
+    call panic
 
 ; Segment Not Present
 ; Class: fault
 ; Error code: yes
 np_int:
-    ; Disable cursor
-    ; Set bit 5 of Cursor Start to disable the dursor
-    mov dx, VGA_CRTC_ADDR
-    mov al, VGA_CRTC_CURS_START
-    out dx, al
-    mov dx, VGA_CRTC_DATA
-    mov al, 0x10
-    out dx, al
-
-    ; Set the color scheme
-    mov al, [PANIC_COLOR]
-    mov [color], al
-    call clear
-
     ; Get the error code
     ; Top 16 bits are reserved
     pop eax
@@ -89,14 +46,12 @@ np_int:
     ; bit 1 clear: GDT/LDT
     bt  ax, 1
     jnc .gdt_ldt
-    ; Print IDT panic message
     ; Push IDT selector
     shr eax, 3
     push eax
-    push DWORD [panic_np_int_len]
-    push panic_np_int
-    call printf
-    hlt
+
+    push DWORD NP_IDT_PANIC
+    call panic
 
 .gdt_ldt:
     ; Test if selector is for GDT or LDT
@@ -105,36 +60,23 @@ np_int:
     bt  ax, 2
     jnc .gdt
     ; TODO: Implement LDT code
+.hang:
     hlt
+    pause
+    jmp .hang
 
 .gdt:
-    ; Print GDT panic message
     ; Push GDT slector
     and ax, 0xfff4
     push eax
-    push DWORD [panic_np_gdt_len]
-    push panic_np_gdt
-    call printf
-    hlt
+
+    push NP_GDT_PANIC
+    call panic
 
 ; General Protection Exception
 ; Class: fault
 ; Error code: yes
 gp_int:
-    ; Disable cursor
-    ; Set bit 5 of Cursor Start to disable the dursor
-    mov dx, VGA_CRTC_ADDR
-    mov al, VGA_CRTC_CURS_START
-    out dx, al
-    mov dx, VGA_CRTC_DATA
-    mov al, 0x10
-    out dx, al
-
-    ; Set the color scheme
-    mov al, [PANIC_COLOR]
-    mov [color], al
-    call clear
-
     ; Get the error code
     ; Top 16 bits are reserved
     pop eax
@@ -148,14 +90,12 @@ gp_int:
     ; bit 1 clear: GDT/LDT
     bt  ax, 1
     jnc .gdt_ldt
-    ; Print IDT panic message
     ; Push IDT selector
     shr eax, 3
     push eax
-    push DWORD [panic_gp_idt_len]
-    push panic_gp_idt
-    call printf
-    hlt
+
+    push GP_IDT_PANIC
+    call panic
 
 .gdt_ldt:
     ; Test if selector is for GDT or LDT
@@ -164,24 +104,22 @@ gp_int:
     bt  ax, 2
     jnc .gdt
     ; TODO: Implement LDT code
+.hang:
     hlt
+    pause
+    jmp .hang
 
 .gdt:
-    ; Print GDT panic message
     ; Push GDT slector
     and ax, 0xfff4
     push eax
-    push DWORD [panic_gp_gdt_len]
-    push panic_gp_gdt
-    call printf
-    hlt
+
+    push GP_GDT_PANIC
+    call panic
 
 .no_error:
-    ; Print no error panic message
-    push DWORD [panic_gp_no_error_len]
-    push panic_gp_no_error
-    call printf
-    hlt
+    push GP_GEN_PANIC
+    call panic
 
 ;;;;;;;;;;;;;;;;;;
 ;; PIC handlers ;;
@@ -397,58 +335,3 @@ kb_int:
 .done:
     popa
     iret
-
-section .rodata
-PANIC_COLOR:
-    db  VGA_BG_WHITE | VGA_FG_L_RED
-
-panic_ud_int:
-    db  'PANIC: INVALID OR UNDEFINED OPCODE', 0x0a
-    db  '   EIP:    %x', 0x0a
-    db  '    CS:    %x', 0x0a
-    db  'EFLAGS:    %x'
-panic_ud_int_len:
-    dd  $ - panic_ud_int
-panic_df_int:
-    db  'PANIC: !!! DOUBLE FAULT !!!'
-panic_df_int_len:
-    dd  $ - panic_df_int
-panic_np_int:
-    db  'PANIC: UNHANDLEABLE INTERRUPT', 0x0a
-    db  'Missing gate: %u', 0x0a
-    db  '   EIP:    %x', 0x0a
-    db  '    CS:    %x', 0x0a
-    db  'EFLAGS:    %x'
-panic_np_int_len:
-    dd  $ - panic_np_int
-panic_np_gdt:
-    db  'PANIC: ATTEMPTTED LOAD OF INVALID SEGMENT', 0x0a
-    db  'Bad selector: %u', 0x0a
-    db  '   EIP:    %x', 0x0a
-    db  '    CS:    %x', 0x0a
-    db  'EFLAGS:    %x'
-panic_np_gdt_len:
-    dd  $ - panic_np_gdt
-panic_gp_idt:
-    db  'PANIC: PROTECTION VIOLATION - IDT', 0x0a
-    db  'Bad gate: %u', 0x0a
-    db  '   EIP:    %x', 0x0a
-    db  '    CS:    %x', 0x0a
-    db  'EFLAGS:    %x'
-panic_gp_idt_len:
-    dd  $ - panic_gp_idt
-panic_gp_gdt:
-    db  'PANIC: PROTECTION VIOLATION - GDT', 0x0a
-    db  'Bad selector: %u', 0x0a
-    db  '   EIP:    %x', 0x0a
-    db  '    CS:    %x', 0x0a
-    db  'EFLAGS:    %x'
-panic_gp_gdt_len:
-    dd  $ - panic_gp_gdt
-panic_gp_no_error:
-    db  'PANIC: PROTECTION VIOLATION', 0x0a
-    db  '   EIP:    %x', 0x0a
-    db  '    CS:    %x', 0x0a
-    db  'EFLAGS:    %x'
-panic_gp_no_error_len:
-    dd  $ - panic_gp_no_error
