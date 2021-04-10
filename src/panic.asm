@@ -11,16 +11,10 @@ section .text
 panic:
     pop eax                 ; Remove panic call-saved eip from the stack
 
-    ; Disable cursor
-    ; Set bit 5 of Cursor Start to disable the dursor
-    mov dx, VGA_CRTC_ADDR
-    mov al, VGA_CRTC_CURS_START
-    out dx, al
-    mov dx, VGA_CRTC_DATA
-    mov al, 0x10
-    out dx, al
+    push CURSOR_DISABLE
+    call cursor_state
 
-    ; Set the color scheme
+    ; Set the color scheme and clear
     mov al, [PANIC_COLOR]
     mov [color], al
     call clear

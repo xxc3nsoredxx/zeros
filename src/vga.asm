@@ -4,6 +4,53 @@
 %include "vga.hs"
 
 section .text
+; u32 cursor_state (u32 state)
+; Change the cursor state (enable/disab;e)
+; Returns the old cursor state
+; Returns 0xffffffff if invalid state change
+cursor_state:
+    push ebp
+    mov ebp, esp
+
+    ; Get and save the current state
+    xor eax, eax
+    mov dx, VGA_CRTC_ADDR
+    mov al, VGA_CRTC_CURS_START
+    out dx, al
+    mov dx, VGA_CRTC_DATA
+    in  al, dx
+    push eax
+
+    cmp BYTE [ebp + 8], CURSOR_ENABLE
+    jz  .enable
+    cmp BYTE [ebp + 8], CURSOR_DISABLE
+    jz  .disable
+    ; Invalid state change
+    mov eax, 0xffffffff
+    jmp .ret
+
+.enable:
+    ; Clear bit 5 of Cursor Start to enable cursor
+    and al, CURSOR_ENABLE
+    out dx, al
+
+    ; Restore original state into eax for return
+    pop eax
+    jmp .ret
+
+.disable:
+    ; Set bit 5 of Cursor Start to disable the dursor
+    or  al, CURSOR_DISABLE
+    out dx, al
+
+    ; Restore original state into eax for return
+    pop eax
+
+.ret:
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 ; u32 getpos (void)
 ; Returns the current x/y pos as address in VRAM
 getpos:

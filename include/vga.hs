@@ -2,6 +2,7 @@
 %define VGA_HS_20200312_234110
 
 ; Screen control functions
+extern cursor_state
 extern getpos
 extern scroll
 extern update_cursor
@@ -16,6 +17,10 @@ extern DEF_COLOR
 extern curx
 extern cury
 extern color
+
+; Cursor states
+%assign CURSOR_ENABLE   0xdf
+%assign CURSOR_DISABLE  0x20
 
 ; VGA foreground colors
 %assign VGA_FG_BLACK        0x00

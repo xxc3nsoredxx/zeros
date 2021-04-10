@@ -4,6 +4,7 @@
 %include "panic.hs"
 %include "sys.hs"
 %include "tests.hs"
+%include "vga.hs"
 
 section .text
     global  kmain           ; Make kmain visible

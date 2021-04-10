@@ -88,19 +88,19 @@ SECTIONS
     } =0x90
 
     /* Readonly data */
-    .rodata :
+    .rodata ALIGN(16) :
     {
         * (.rodata)
     } =0x00
 
     /* Initialized data */
-    .data :
+    .data ALIGN(16) :
     {
         * (.data)
     } =0x00
 
     /* Uninitialized data */
-    .bss :
+    .bss ALIGN(16) :
     {
         * (.bss)
     } =0x00
