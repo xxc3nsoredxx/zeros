@@ -3,6 +3,7 @@
 
 %include "tests.hs"
 %include "gdt.hs"
+%include "misc.hs"
 %include "panic.hs"
 %include "sys.hs"
 
@@ -66,98 +67,97 @@ exception_test:
 ; Basic printf test
 printf_test:
     ; Test just string
-    push DWORD [printf_test1_len]
+    push DWORD printf_test1_len
     push printf_test1
     call printf
 
     ; Test %x
     push 3735929054
-    push DWORD [printf_test2_len]
+    push DWORD printf_test2_len
     push printf_test2
     call printf
 
     ; Test %%
-    push DWORD [printf_test3_len]
+    push DWORD printf_test3_len
     push printf_test3
     call printf
 
     ; Test invalid format
-    push DWORD [printf_test4_len]
+    push DWORD printf_test4_len
     push printf_test4
     call printf
 
     ; Test incomplete format at the end of the string
-    push DWORD [printf_test5_len]
+    push DWORD printf_test5_len
     push printf_test5
     call printf
 
     ; Test %u
     push 0xdeadc0de
-    push DWORD [printf_test6_len]
+    push DWORD printf_test6_len
     push printf_test6
     call printf
 
     ; Test %u and %x
     push 0xdeadc0de
     push 3735929054
-    push DWORD [printf_test7_len]
+    push DWORD printf_test7_len
     push printf_test7
     call printf
 
     ; Test %s
-    push DWORD [printf_test9_len]
+    push DWORD printf_test9_len
     push printf_test9
-    push DWORD [printf_test8_len]
+    push DWORD printf_test8_len
     push printf_test8
     call printf
 
     ; Test %s with format in the printed string
-    push DWORD [printf_test3_len]
+    push DWORD printf_test3_len
     push printf_test3
-    push DWORD [printf_test10_len]
+    push DWORD printf_test10_len
     push printf_test10
     call printf
 
     ret
 
 section .rodata
-printf_test1:
+string printf_test1
     db  'Just a basic printf test', 0x0a
-printf_test1_len:
-    dd  $ - printf_test1
-printf_test2:
+endstring
+
+string printf_test2
     db  '3735929054 in hex: %x', 0x0a
-printf_test2_len:
-    dd  $ - printf_test2
-printf_test3:
+endstring
+
+string printf_test3
     db  'Use "%%%%" to print "%%"', 0x0a
-printf_test3_len:
-    dd  $ - printf_test3
-printf_test4:
+endstring
+
+string printf_test4
     db  'Contains "%%q", an invalid format ->%q<-', 0x0a
-printf_test4_len:
-    dd  $ - printf_test4
-printf_test5:
+endstring
+
+string printf_test5
     db  'Ends in incomplete format', 0x0a, '%'
-printf_test5_len:
-    dd  $ - printf_test5
-printf_test6:
+endstring
+
+string printf_test6
     db  '0xdeadc0de in (unsigned) decimal: %u', 0x0a
-printf_test6_len:
-    dd  $ - printf_test6
-printf_test7:
+endstring
+
+string printf_test7
     db  '0x%x (%%x) in (unsigned) decimal: %u (%%u)', 0x0a
-printf_test7_len:
-    dd  $ - printf_test7
-printf_test8:
+endstring
+
+string printf_test8
     db  'Test printing string: %s', 0x0a
-printf_test8_len:
-    dd  $ - printf_test8
-printf_test9:
+endstring
+
+string printf_test9
     db  'Printed with format :)'
-printf_test9_len:
-    dd  $ - printf_test9
-printf_test10:
+endstring
+
+string printf_test10
     db  'String with formats: %s'
-printf_test10_len:
-    dd  $ - printf_test10
+endstring

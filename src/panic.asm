@@ -2,6 +2,7 @@
     bits    32
 
 %include "panic.hs"
+%include "misc.hs"
 %include "sys.hs"
 %include "vga.hs"
 
@@ -67,17 +68,17 @@ PANIC_COLOR:
     db  VGA_BG_WHITE | VGA_FG_L_RED
 
 ; Common strings
-title:
+string title
     db  'PANIC: %s', 0x0a
-title_len:  equ $ - title
-reg_info:
+endstring
+string reg_info
     db  '   EIP:    %x', 0x0a
     db  '    CS:    %x', 0x0a
     db  'EFLAGS:    %x'
-reg_info_len:   equ $ - reg_info
-error:
+endstring
+string error
     db  '%s: %u', 0x0a
-error_len:  equ $ - error
+endstring
 
 ud_info:
     istruc panic_info_t
@@ -87,9 +88,9 @@ ud_info:
         at panic_info_t.error_msg,      dd  0
         at panic_info_t.error_msg_len,  dd  0
     iend
-ud_title:
+string ud_title
     db  'INVALID OR UNDEFINED OPCODE'
-ud_title_len: equ $ - ud_title
+endstring
 
 df_info:
     istruc panic_info_t
@@ -99,9 +100,9 @@ df_info:
         at panic_info_t.error_msg,      dd  0
         at panic_info_t.error_msg_len,  dd  0
     iend
-df_title:
+string df_title
     db  '!!! DOUBLE FAULT !!!'
-df_title_len:   equ $ - df_title
+endstring
 
 np_idt_info:
     istruc panic_info_t
@@ -111,12 +112,12 @@ np_idt_info:
         at panic_info_t.error_msg,      dd  np_idt_error
         at panic_info_t.error_msg_len,  dd  np_idt_error_len
     iend
-np_idt_title:
+string np_idt_title
     db  'UNHANDLEABLE INTERRUPT'
-np_idt_title_len:   equ $ - np_idt_title
-np_idt_error:
+endstring
+string np_idt_error
     db  'Missing gate'
-np_idt_error_len:   equ $ - np_idt_error
+endstring
 
 np_gdt_info:
     istruc panic_info_t
@@ -126,12 +127,12 @@ np_gdt_info:
         at panic_info_t.error_msg,      dd  np_gdt_error
         at panic_info_t.error_msg_len,  dd  np_gdt_error_len
     iend
-np_gdt_title:
+string np_gdt_title
     db  'ATTEMPTTED LOAD OF INVALID SEGMENT'
-np_gdt_title_len:   equ $ - np_gdt_title
-np_gdt_error:
+endstring
+string np_gdt_error
     db  'Bad selector'
-np_gdt_error_len:   equ $ - np_gdt_error
+endstring
 
 gp_idt_info:
     istruc panic_info_t
@@ -141,12 +142,12 @@ gp_idt_info:
         at panic_info_t.error_msg,      dd  gp_idt_error
         at panic_info_t.error_msg_len,  dd  gp_idt_error_len
     iend
-gp_idt_title:
+string gp_idt_title
     db  'PROTECTION VIOLATION - IDT'
-gp_idt_title_len:   equ $ - gp_idt_title
-gp_idt_error:
+endstring
+string gp_idt_error
     db  'Bad gate'
-gp_idt_error_len:   equ $ - gp_idt_error
+endstring
 
 gp_gdt_info:
     istruc panic_info_t
@@ -156,12 +157,12 @@ gp_gdt_info:
         at panic_info_t.error_msg,      dd  gp_gdt_error
         at panic_info_t.error_msg_len,  dd  gp_gdt_error_len
     iend
-gp_gdt_title:
+string gp_gdt_title
     db  'PROTECTION VIOLATION - GDT'
-gp_gdt_title_len:   equ $ - gp_gdt_title
-gp_gdt_error:
+endstring
+string gp_gdt_error
     db  'Bad selector'
-gp_gdt_error_len:   equ $ - gp_gdt_error
+endstring
 
 gp_gen_info:
     istruc panic_info_t
@@ -171,6 +172,6 @@ gp_gen_info:
         at panic_info_t.error_msg,      dd  0
         at panic_info_t.error_msg_len,  dd  0
     iend
-gp_gen_title:
+string gp_gen_title
     db  'PROTECTION VIOLATION'
-gp_gen_title_len: equ $ - gp_gen_title
+endstring

@@ -44,16 +44,16 @@ $(OBJ)/kb.o: kb.asm kb.hs idt.hs
 $(OBJ)/kernel0.o: kernel0.asm gdt.hs idt.hs kb.hs multiboot.hs tss.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel1.o: kernel1.asm panic.hs sys.hs tests.hs
+$(OBJ)/kernel1.o: kernel1.asm misc.hs panic.hs sys.hs tests.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/panic.o: panic.asm panic.hs sys.hs vga.hs
+$(OBJ)/panic.o: panic.asm panic.hs misc.hs sys.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/sys.o: sys.asm sys.hs kb.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/tests.o: tests.asm tests.hs gdt.hs panic.hs sys.hs
+$(OBJ)/tests.o: tests.asm tests.hs gdt.hs misc.hs panic.hs sys.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/vga.o: vga.asm vga.hs

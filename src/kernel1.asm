@@ -1,6 +1,7 @@
     ; Kernel 1
     bits    32
 
+%include "misc.hs"
 %include "panic.hs"
 %include "sys.hs"
 %include "tests.hs"
@@ -19,11 +20,11 @@ kmain:
     call exception_test
 
 .prompt_loop:
-    push DWORD [prompt_len] ; Show prompt
+    push DWORD prompt_len   ; Show prompt
     push prompt
     call puts
 
-    push DWORD [input_len]  ; Get input
+    push DWORD input_len    ; Get input
     push input_buf
     call getsn
     push eax                ; Save read count
@@ -42,11 +43,12 @@ kmain:
 
     ret
 
-section .data
-prompt:
+section .rodata
+string prompt
     db  'ZerOS > '
-prompt_len:
-    dd  $ - prompt
+endstring
+
+section .data
 input_len:
     dd  input_buf_end - input_buf
 
