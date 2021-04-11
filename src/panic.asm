@@ -10,6 +10,7 @@
 section .text
 ; void eflags_info (u32 eflags)
 ; Dump information about the given EFLAGS state
+; Uppercase strings mean flag is set, lowercase string mean flag is clear
 eflags_info:
     push ebp
     mov ebp, esp
@@ -23,8 +24,6 @@ eflags_info:
     push DWORD eflags_len
     push eflags
     call printf
-
-    ; Uppercase strings mean flag is set, lowercase string mean flag is clear
 
     ; Print status flags
     ; CMOVcc doesn't allow directly moving an address into a register, need to
@@ -62,6 +61,57 @@ eflags_info:
 
     push DWORD status_flags_len
     push status_flags
+    call printf
+
+    ; Print system flags
+    bt  ebx, 21             ; Identification flag
+    cmovc eax, [id_set]
+    cmovnc eax, [id_clear]
+    push DWORD id_len
+    push eax
+    bt  ebx, 20             ; Virtual Interrupt Pending flag
+    cmovc eax, [vip_set]
+    cmovnc eax, [vip_clear]
+    push DWORD vip_len
+    push eax
+    bt  ebx, 19             ; Virtual Interrupt flag
+    cmovc eax, [vif_set]
+    cmovnc eax, [vif_clear]
+    push DWORD vif_len
+    push eax
+    bt  ebx, 18             ; Alignment Check flag
+    cmovc eax, [ac_set]
+    cmovnc eax, [ac_clear]
+    push DWORD ac_len
+    push eax
+    bt  ebx, 17             ; Virtual 8086 Mode flag
+    cmovc eax, [vm_set]
+    cmovnc eax, [vm_clear]
+    push DWORD vm_len
+    push eax
+    bt  ebx, 16             ; Resume flag
+    cmovc eax, [rf_set]
+    cmovnc eax, [rf_clear]
+    push DWORD rf_len
+    push eax
+    bt  ebx, 4              ; Nested Task flag
+    cmovc eax, [nt_set]
+    cmovnc eax, [nt_clear]
+    push DWORD nt_len
+    push eax
+    bt  ebx, 9              ; Interrupt Enable flag
+    cmovc eax, [if_set]
+    cmovnc eax, [if_clear]
+    push DWORD if_len
+    push eax
+    bt  ebx, 8              ; Trap flag
+    cmovc eax, [tf_set]
+    cmovnc eax, [tf_clear]
+    push DWORD tf_len
+    push eax
+
+    push DWORD system_flags_len
+    push system_flags
     call printf
 
     pop ebx
@@ -202,6 +252,8 @@ endstring
 string eflags
     db  'EFLAGS:    %x', 0x0a
 endstring
+
+; Status flags strings
 string status_flags
     db  'Status:    %s %s %s %s %s %s', 0x0a
 endstring
@@ -260,6 +312,92 @@ of_set:
     dd  of_set_str
 of_clear:
     dd  of_clear_str
+
+; System flags strings
+string system_flags
+    db  'System:    %s %s %s %s %s %s %s %s %s', 0x0a
+endstring
+tf_set_str:
+    db  'TRAP'
+tf_clear_str:
+    db  'trap'
+tf_len: equ tf_clear_str - tf_set_str
+tf_set:
+    dd  tf_set_str
+tf_clear:
+    dd  tf_clear_str
+if_set_str:
+    db  'INTERRUPT'
+if_clear_str:
+    db  'interrupt'
+if_len: equ if_clear_str - if_set_str
+if_set:
+    dd  if_set_str
+if_clear:
+    dd  if_clear_str
+nt_set_str:
+    db  'NEST'
+nt_clear_str:
+    db  'nest'
+nt_len: equ nt_clear_str - nt_set_str
+nt_set:
+    dd  nt_set_str
+nt_clear:
+    dd  nt_clear_str
+rf_set_str:
+    db  'RESUME'
+rf_clear_str:
+    db  'resume'
+rf_len: equ rf_clear_str - rf_set_str
+rf_set:
+    dd  rf_set_str
+rf_clear:
+    dd  rf_clear_str
+vm_set_str:
+    db  'VIRT_8086'
+vm_clear_str:
+    db  'virt_8086'
+vm_len: equ vm_clear_str - vm_set_str
+vm_set:
+    dd  vm_set_str
+vm_clear:
+    dd  vm_clear_str
+ac_set_str:
+    db  'ALIGN'
+ac_clear_str:
+    db  'align'
+ac_len: equ ac_clear_str - ac_set_str
+ac_set:
+    dd  ac_set_str
+ac_clear:
+    dd  ac_clear_str
+vif_set_str:
+    db  'VIRT_INT'
+vif_clear_str:
+    db  'virt_int'
+vif_len: equ vif_clear_str - vif_set_str
+vif_set:
+    dd  vif_set_str
+vif_clear:
+    dd  vif_clear_str
+vip_set_str:
+    db  'VIRT_PEND'
+vip_clear_str:
+    db  'virt_pend'
+vip_len: equ vip_clear_str - vip_set_str
+vip_set:
+    dd  vip_set_str
+vip_clear:
+    dd  vip_clear_str
+id_set_str:
+    db  'CPUID'
+id_clear_str:
+    db  'cpuid'
+id_len: equ id_clear_str - id_set_str
+id_set:
+    dd  id_set_str
+id_clear:
+    dd  id_clear_str
 
 ; Individual panic info
 ud_info:
