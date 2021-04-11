@@ -114,6 +114,25 @@ eflags_info:
     push system_flags
     call printf
 
+    ; Print direction flag
+    bt  ebx, 10
+    cmovc eax, [df_set]
+    cmovnc eax, [df_clear]
+    push DWORD df_len
+    push eax
+
+    push DWORD dir_flag_len
+    push dir_flag
+    call printf
+
+    ; Print I/O privilege level
+    and ebx, 0x3000         ; I/O PL is bits 12 and 13
+    shr ebx, 12
+    push ebx
+    push DWORD iopl_flag_len
+    push iopl_flag
+    call printf
+
     pop ebx
     mov esp, ebp
     pop ebp
@@ -182,14 +201,20 @@ panic:
     push DWORD fs:[tss_t.eflags]
     call eflags_info
 
-    ; Print general purpose registers
+    ; Print other registers
+    push DWORD fs:[tss_t.gs]
     push DWORD fs:[tss_t.edi]
+    push DWORD fs:[tss_t.fs]
     push DWORD fs:[tss_t.esi]
+    push DWORD fs:[tss_t.es]
     push DWORD fs:[tss_t.edx]
+    push DWORD fs:[tss_t.ds]
     push DWORD fs:[tss_t.ecx]
     push DWORD fs:[tss_t.esp]
+    push DWORD fs:[tss_t.ss]
     push DWORD fs:[tss_t.ebx]
     push DWORD fs:[tss_t.ebp]
+    push DWORD fs:[tss_t.cs]
     push DWORD fs:[tss_t.eax]
     push DWORD task_info2_len
     push task_info2
@@ -201,6 +226,7 @@ panic:
     push DWORD reg_info_len
     push reg_info
     call printf
+    call eflags_info
 
     ; Freeze the machine
 .hang:
@@ -230,32 +256,31 @@ string error
     db  '%s: %u', 0x0a
 endstring
 string task_info1
-    db  'Current TSS selector: %x', 0x0a
+    db  ' Current TSS selector: %x', 0x0a
     db  'Previous TSS selector: %x', 0x0a
-    db  '   EIP:    %x', 0x0a
+    db  '      EIP: %x', 0x0a
 endstring
 string task_info2
-    db  '   EAX:    %x  EBP:    %x', 0x0a
-    db  '   EBX:    %x  ESP:    %x', 0x0a
-    db  '   ECX:    %x', 0x0a
-    db  '   EDX:    %x', 0x0a
-    db  '   ESI:    %x', 0x0a
-    db  '   EDI:    %x', 0x0a
+    db  '      EAX: %x  CS: %x  EBP:    %x', 0x0a
+    db  '      EBX: %x  SS: %x  ESP:    %x', 0x0a
+    db  '      ECX: %x  DS: %x', 0x0a
+    db  '      EDX: %x  ES: %x', 0x0a
+    db  '      ESI: %x  FS: %x', 0x0a
+    db  '      EDI: %x  GS: %x', 0x0a
 endstring
 string reg_info
-    db  '   EIP:    %x', 0x0a
-    db  '    CS:    %x', 0x0a
-    db  'EFLAGS:    %x'
+    db  '      EIP: %x', 0x0a
+    db  '       CS: %x', 0x0a
 endstring
 
 ; EFLAGS strings
 string eflags
-    db  'EFLAGS:    %x', 0x0a
+    db  '   EFLAGS: %x', 0x0a
 endstring
 
 ; Status flags strings
 string status_flags
-    db  'Status:    %s %s %s %s %s %s', 0x0a
+    db  '   Status: %s %s %s %s %s %s', 0x0a
 endstring
 ; Strings, length, pointers to strings
 cf_set_str:
@@ -315,7 +340,7 @@ of_clear:
 
 ; System flags strings
 string system_flags
-    db  'System:    %s %s %s %s %s %s %s %s %s', 0x0a
+    db  '   System: %s %s %s %s %s %s %s %s %s', 0x0a
 endstring
 tf_set_str:
     db  'TRAP'
@@ -399,6 +424,25 @@ id_set:
 id_clear:
     dd  id_clear_str
 
+; Direction flag strings
+string dir_flag
+    db  'Direction: %s', 0x0a
+endstring
+df_set_str:
+    db  'DECREMENT'
+df_clear_str:
+    db  'increment'
+df_len: equ df_clear_str - df_set_str
+df_set:
+    dd  df_set_str
+df_clear:
+    dd  df_clear_str
+
+; I/O privilege level string
+string iopl_flag
+    db  '   I/O PL: %u', 0x0a
+endstring
+
 ; Individual panic info
 ud_info:
     istruc panic_info_t
@@ -423,7 +467,7 @@ df_info:
         at panic_info_t.error_msg_len,  dd  0
     iend
 string df_title
-    db  '!!! DOUBLE FAULT !!!'
+    db  'DOUBLE FAULT'
 endstring
 
 np_idt_info:
