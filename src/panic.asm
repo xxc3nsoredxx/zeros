@@ -8,6 +8,67 @@
 %include "vga.hs"
 
 section .text
+; void eflags_info (u32 eflags)
+; Dump information about the given EFLAGS state
+eflags_info:
+    push ebp
+    mov ebp, esp
+    push ebx
+
+    ; Save the EFLAGS
+    mov ebx, DWORD [ebp + 8]
+
+    ; Print EFLAGS in hex
+    push ebx
+    push DWORD eflags_len
+    push eflags
+    call printf
+
+    ; Uppercase strings mean flag is set, lowercase string mean flag is clear
+
+    ; Print status flags
+    ; CMOVcc doesn't allow directly moving an address into a register, need to
+    ; instead move the contents of a pointer to the strings...
+    bt  ebx, 11             ; Overflow flag
+    cmovc eax, [of_set]
+    cmovnc eax, [of_clear]
+    push DWORD of_len
+    push eax
+    bt  ebx, 7              ; Sign flag
+    cmovc eax, [sf_set]
+    cmovnc eax, [sf_clear]
+    push DWORD sf_len
+    push eax
+    bt  ebx, 6              ; Zero flag
+    cmovc eax, [zf_set]
+    cmovnc eax, [zf_clear]
+    push DWORD zf_len
+    push eax
+    bt  ebx, 4              ; Auxiliary Carry flag
+    cmovc eax, [af_set]
+    cmovnc eax, [af_clear]
+    push DWORD af_len
+    push eax
+    bt  ebx, 2              ; Parity flag
+    cmovc eax, [pf_set]
+    cmovnc eax, [pf_clear]
+    push DWORD pf_len
+    push eax
+    bt  ebx, 0              ; Carry flag
+    cmovc eax, [cf_set]
+    cmovnc eax, [cf_clear]
+    push DWORD cf_len
+    push eax
+
+    push DWORD status_flags_len
+    push status_flags
+    call printf
+
+    pop ebx
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 ; NO_RET panic (u32 panic_selector, u32? error)
 ; Display a kernel panic screen
 panic:
@@ -59,6 +120,19 @@ panic:
     mov fs, cx
     push fs
 
+    ; Print basic info
+    push DWORD fs:[tss_t.eip]
+    push ebx                ; Push previous TSS
+    push eax                ; Push current TSS
+    push DWORD task_info1_len
+    push task_info1
+    call printf
+
+    ; Print EFLAGS
+    push DWORD fs:[tss_t.eflags]
+    call eflags_info
+
+    ; Print general purpose registers
     push DWORD fs:[tss_t.edi]
     push DWORD fs:[tss_t.esi]
     push DWORD fs:[tss_t.edx]
@@ -67,12 +141,8 @@ panic:
     push DWORD fs:[tss_t.ebx]
     push DWORD fs:[tss_t.ebp]
     push DWORD fs:[tss_t.eax]
-    push DWORD fs:[tss_t.eflags]
-    push DWORD fs:[tss_t.eip]
-    push ebx                ; Push previous TSS
-    push eax                ; Push current TSS
-    push DWORD task_info_len
-    push task_info
+    push DWORD task_info2_len
+    push task_info2
     call printf
     jmp .hang
 
@@ -106,16 +176,15 @@ PANIC_COLOR:
 string title
     db  'PANIC: %s', 0x0a
 endstring
-
 string error
     db  '%s: %u', 0x0a
 endstring
-
-string task_info
+string task_info1
     db  'Current TSS selector: %x', 0x0a
     db  'Previous TSS selector: %x', 0x0a
     db  '   EIP:    %x', 0x0a
-    db  'EFLAGS:    %x', 0x0a
+endstring
+string task_info2
     db  '   EAX:    %x  EBP:    %x', 0x0a
     db  '   EBX:    %x  ESP:    %x', 0x0a
     db  '   ECX:    %x', 0x0a
@@ -123,13 +192,76 @@ string task_info
     db  '   ESI:    %x', 0x0a
     db  '   EDI:    %x', 0x0a
 endstring
-
 string reg_info
     db  '   EIP:    %x', 0x0a
     db  '    CS:    %x', 0x0a
     db  'EFLAGS:    %x'
 endstring
 
+; EFLAGS strings
+string eflags
+    db  'EFLAGS:    %x', 0x0a
+endstring
+string status_flags
+    db  'Status:    %s %s %s %s %s %s', 0x0a
+endstring
+; Strings, length, pointers to strings
+cf_set_str:
+    db  'CARRY'
+cf_clear_str:
+    db  'carry'
+cf_len: equ cf_clear_str - cf_set_str
+cf_set:
+    dd  cf_set_str
+cf_clear:
+    dd  cf_clear_str
+pf_set_str:
+    db  'PARITY'
+pf_clear_str:
+    db  'parity'
+pf_len: equ pf_clear_str - pf_set_str
+pf_set:
+    dd  pf_set_str
+pf_clear:
+    dd  pf_clear_str
+af_set_str:
+    db  'AUX_CARRY'
+af_clear_str:
+    db  'aux_carry'
+af_len: equ af_clear_str - af_set_str
+af_set:
+    dd  af_set_str
+af_clear:
+    dd  af_clear_str
+zf_set_str:
+    db  'ZERO'
+zf_clear_str:
+    db  'zero'
+zf_len: equ zf_clear_str - zf_set_str
+zf_set:
+    dd  zf_set_str
+zf_clear:
+    dd  zf_clear_str
+sf_set_str:
+    db  'SIGN'
+sf_clear_str:
+    db  'sign'
+sf_len: equ sf_clear_str - sf_set_str
+sf_set:
+    dd  sf_set_str
+sf_clear:
+    dd  sf_clear_str
+of_set_str:
+    db  'OVERFLOW'
+of_clear_str:
+    db  'overflow'
+of_len: equ of_clear_str - of_set_str
+of_set:
+    dd  of_set_str
+of_clear:
+    dd  of_clear_str
+
+; Individual panic info
 ud_info:
     istruc panic_info_t
         at panic_info_t.title,          dd  ud_title

@@ -1,6 +1,7 @@
 %ifndef PANIC_H_20210408_220825
 %define PANIC_H_20210408_220825
 
+extern eflags_info
 extern panic
 
 ; Panic info struct
