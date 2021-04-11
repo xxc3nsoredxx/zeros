@@ -25,10 +25,8 @@ df_int:
     ; Disable interrupts so the handler isn't interrupted
     cli
 
-    ; Push temporary values
-    push 0x11223344         ; eflags
-    push DWORD 0x42         ; cs
-    push 0xdeadc0de         ; eip
+    ; Remove the unneeded error code from the stack
+    pop eax
 
     push DF_PANIC
     call panic

@@ -16,7 +16,7 @@ kmain:
     ; Tests
     call printf_test
 
-    push DWORD GP_GEN_PANIC
+    push DWORD DF_PANIC
     call exception_test
 
 .prompt_loop:
@@ -24,7 +24,7 @@ kmain:
     push prompt
     call puts
 
-    push DWORD input_len    ; Get input
+    push DWORD [input_len]  ; Get input
     push input_buf
     call getsn
     push eax                ; Save read count

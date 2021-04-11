@@ -12,6 +12,8 @@ struc panic_info_t
         resd    1           ; u32
     .has_error:             ; Does stack contain error code
         resb    1           ; true/false
+    .is_task:               ; Is the panic created by a task gate
+        resb    1           ; true/false
         alignb  4
     .error_msg:             ; Message to print with error code
         resd    1           ; char *

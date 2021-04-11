@@ -4,6 +4,7 @@
 %include "panic.hs"
 %include "misc.hs"
 %include "sys.hs"
+%include "tss.hs"
 %include "vga.hs"
 
 section .text
@@ -33,15 +34,49 @@ panic:
 
     ; Test for error code
     cmp BYTE [ebx + panic_info_t.has_error], 0
-    jz  .skip_error
+    jz  .dump_task
     ; Print error message (code already on stack)
     push DWORD [ebx + panic_info_t.error_msg_len]
     push DWORD [ebx + panic_info_t.error_msg]
     push DWORD error_len
     push error
     call printf
+    jmp .dump_regs
 
-.skip_error:
+.dump_task:
+    ; Test for task gate
+    cmp BYTE [ebx + panic_info_t.is_task], 0
+    jz  .dump_regs
+    ; Print info about the previous task
+    str ecx                 ; Get the curent TSS selector
+    mov eax, ecx
+    add ecx, 8              ; Get the read mapping
+    mov fs, cx
+    ; Read the backlink to get the previous TSS selector
+    mov cx, WORD fs:[tss_t.backlink]
+    mov ebx, ecx
+    add ecx, 8              ; Get the read mapping
+    mov fs, cx
+    push fs
+
+    push DWORD fs:[tss_t.edi]
+    push DWORD fs:[tss_t.esi]
+    push DWORD fs:[tss_t.edx]
+    push DWORD fs:[tss_t.ecx]
+    push DWORD fs:[tss_t.esp]
+    push DWORD fs:[tss_t.ebx]
+    push DWORD fs:[tss_t.ebp]
+    push DWORD fs:[tss_t.eax]
+    push DWORD fs:[tss_t.eflags]
+    push DWORD fs:[tss_t.eip]
+    push ebx                ; Push previous TSS
+    push eax                ; Push current TSS
+    push DWORD task_info_len
+    push task_info
+    call printf
+    jmp .hang
+
+.dump_regs:
     ; Print the register info (already on the stack thanks to the exception)
     push DWORD reg_info_len
     push reg_info
@@ -71,13 +106,28 @@ PANIC_COLOR:
 string title
     db  'PANIC: %s', 0x0a
 endstring
+
+string error
+    db  '%s: %u', 0x0a
+endstring
+
+string task_info
+    db  'Current TSS selector: %x', 0x0a
+    db  'Previous TSS selector: %x', 0x0a
+    db  '   EIP:    %x', 0x0a
+    db  'EFLAGS:    %x', 0x0a
+    db  '   EAX:    %x  EBP:    %x', 0x0a
+    db  '   EBX:    %x  ESP:    %x', 0x0a
+    db  '   ECX:    %x', 0x0a
+    db  '   EDX:    %x', 0x0a
+    db  '   ESI:    %x', 0x0a
+    db  '   EDI:    %x', 0x0a
+endstring
+
 string reg_info
     db  '   EIP:    %x', 0x0a
     db  '    CS:    %x', 0x0a
     db  'EFLAGS:    %x'
-endstring
-string error
-    db  '%s: %u', 0x0a
 endstring
 
 ud_info:
@@ -85,6 +135,7 @@ ud_info:
         at panic_info_t.title,          dd  ud_title
         at panic_info_t.title_len,      dd  ud_title_len
         at panic_info_t.has_error,      db  0
+        at panic_info_t.is_task,        db  0
         at panic_info_t.error_msg,      dd  0
         at panic_info_t.error_msg_len,  dd  0
     iend
@@ -97,6 +148,7 @@ df_info:
         at panic_info_t.title,          dd  df_title
         at panic_info_t.title_len,      dd  df_title_len
         at panic_info_t.has_error,      db  0
+        at panic_info_t.is_task,        db  1
         at panic_info_t.error_msg,      dd  0
         at panic_info_t.error_msg_len,  dd  0
     iend
@@ -109,6 +161,7 @@ np_idt_info:
         at panic_info_t.title,          dd  np_idt_title
         at panic_info_t.title_len,      dd  np_idt_title_len
         at panic_info_t.has_error,      db  1
+        at panic_info_t.is_task,        db  0
         at panic_info_t.error_msg,      dd  np_idt_error
         at panic_info_t.error_msg_len,  dd  np_idt_error_len
     iend
@@ -124,6 +177,7 @@ np_gdt_info:
         at panic_info_t.title,          dd  np_gdt_title
         at panic_info_t.title_len,      dd  np_gdt_title_len
         at panic_info_t.has_error,      db  1
+        at panic_info_t.is_task,        db  0
         at panic_info_t.error_msg,      dd  np_gdt_error
         at panic_info_t.error_msg_len,  dd  np_gdt_error_len
     iend
@@ -139,6 +193,7 @@ gp_idt_info:
         at panic_info_t.title,          dd  gp_idt_title
         at panic_info_t.title_len,      dd  gp_idt_title_len
         at panic_info_t.has_error,      db  1
+        at panic_info_t.is_task,        db  0
         at panic_info_t.error_msg,      dd  gp_idt_error
         at panic_info_t.error_msg_len,  dd  gp_idt_error_len
     iend
@@ -154,6 +209,7 @@ gp_gdt_info:
         at panic_info_t.title,          dd  gp_gdt_title
         at panic_info_t.title_len,      dd  gp_gdt_title_len
         at panic_info_t.has_error,      db  1
+        at panic_info_t.is_task,        db  0
         at panic_info_t.error_msg,      dd  gp_gdt_error
         at panic_info_t.error_msg_len,  dd  gp_gdt_error_len
     iend
@@ -169,6 +225,7 @@ gp_gen_info:
         at panic_info_t.title,          dd  gp_gen_title
         at panic_info_t.title_len,      dd  gp_gen_title_len
         at panic_info_t.has_error,      db  0
+        at panic_info_t.is_task,        db  0
         at panic_info_t.error_msg,      dd  0
         at panic_info_t.error_msg_len,  dd  0
     iend

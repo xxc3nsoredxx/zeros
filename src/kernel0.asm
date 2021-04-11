@@ -176,7 +176,16 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_MAIN_TSS_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_MAIN_TSS_BASE_TOP
     iend
-.df_stack:                  ; #DF task stack selector (GDT offset = 0x38)
+.main_tss_read:             ; Main TSS read access (GDT offset = 0x38)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_MAIN_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_MAIN_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_MAIN_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_READ_ONLY
+        at gdt_entry_t.flags_lim,       db GDT_MAIN_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_MAIN_TSS_BASE_TOP
+    iend
+.df_stack:                  ; #DF task stack selector (GDT offset = 0x40)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_DF_STACK_LIM_BOT
         at gdt_entry_t.base_bot,        dw GDT_DF_STACK_BASE_BOT
@@ -185,12 +194,21 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_DF_STACK_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_DF_STACK_BASE_TOP
     iend
-.df_tss:                    ; #DF task selector (GDT offset = 0x40)
+.df_tss:                    ; #DF task selector (GDT offset = 0x48)
     istruc  gdt_entry_t
         at gdt_entry_t.limit_bot,       dw GDT_DF_TSS_LIM_BOT
         at gdt_entry_t.base_bot,        dw GDT_DF_TSS_BASE_BOT
         at gdt_entry_t.base_top_bot,    db GDT_DF_TSS_BASE_TOP_BOT
         at gdt_entry_t.access,          db GDT_DF_TSS_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_DF_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_DF_TSS_BASE_TOP
+    iend
+.df_tss_read:               ; #DF TSS read access (GDT offset = 0x50)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_DF_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_DF_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_DF_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_READ_ONLY
         at gdt_entry_t.flags_lim,       db GDT_DF_TSS_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_DF_TSS_BASE_TOP
     iend

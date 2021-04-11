@@ -209,14 +209,25 @@ endstruc
 ;                                 +-------- Bytewise
 %assign GDT_DF_TSS_BASE_TOP     0
 
-%assign GDT_VRAM_INDEX  0x08
-%assign GDT_STACK_INDEX 0x10
-%assign GDT_CODE_INDEX  0x18
-%assign GDT_DATA_INDEX  0x20
-%assign GDT_NOT_PRESENT 0x28
-%assign GDT_MAIN_TSS    0x30
-%assign GDT_DF_STACK    0x38
-%assign GDT_DF_TSS      0x40
+%assign GDT_READ_ONLY   0b10010000
+;                         |\|||||+- Set by CPU
+;                         | ||||+-- Read only
+;                         | |||+--- Grows up
+;                         | ||+---- Not executable
+;                         | |+----- Code/Data (data)
+;                         | +------ Ring 0
+;                         +-------- Present
+
+%assign GDT_VRAM_INDEX      0x08
+%assign GDT_STACK_INDEX     0x10
+%assign GDT_CODE_INDEX      0x18
+%assign GDT_DATA_INDEX      0x20
+%assign GDT_NOT_PRESENT     0x28
+%assign GDT_MAIN_TSS        0x30
+%assign GDT_MAIN_TSS_READ   0x38
+%assign GDT_DF_STACK        0x40
+%assign GDT_DF_TSS          0x48
+%assign GDT_DF_TSS_READ     0x50
 
 %endif
 
