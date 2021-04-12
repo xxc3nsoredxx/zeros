@@ -71,6 +71,27 @@ np_int:
     push NP_GDT_PANIC
     call panic
 
+; Stack Fault Exception
+; Class: fault
+; Error code: yes
+ss_int:
+    ; Get the error code
+    ; Top 16 bits are reserved
+    pop eax
+
+    ; If error code is 0, limit violation, else bad selector
+    cmp eax, 0
+    jnz .selector
+    push SS_LIMIT_PANIC
+    call panic
+
+.selector:
+    ; Push selector
+    push eax
+
+    push SS_SEL_PANIC
+    call panic
+
 ; General Protection Exception
 ; Class: fault
 ; Error code: yes

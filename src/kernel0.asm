@@ -70,6 +70,12 @@ kstart:
     shr eax, 16
     mov [idt.pm_np + idt_entry_t.off_top], ax
 
+    ; Fill in #SS offsets
+    mov eax, ss_int
+    mov [idt.pm_ss + idt_entry_t.off_bot], ax
+    shr eax, 16
+    mov [idt.pm_ss + idt_entry_t.off_top], ax
+
     ; Fill in #GP offsets
     mov eax, gp_int
     mov [idt.pm_gp + idt_entry_t.off_bot], ax
@@ -271,12 +277,13 @@ idt:                        ; Start of the IDT
         at idt_entry_t.type_attr,   db INT_GATE
         at idt_entry_t.off_top,     dw 0xFFFF   ; Filled in code
     iend
-    istruc  idt_entry_t     ; Null entry
-        at idt_entry_t.off_bot,     dw 0
-        at idt_entry_t.selector,    dw 0
+.pm_ss:
+    istruc  idt_entry_t     ; Stack Fault Exception (0x0c)
+        at idt_entry_t.off_bot,     dw 0xFFFF   ; Filled in code
+        at idt_entry_t.selector,    dw GDT_CODE_INDEX
         at idt_entry_t.zero,        db 0
-        at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
-        at idt_entry_t.off_top,     dw 0
+        at idt_entry_t.type_attr,   db INT_GATE
+        at idt_entry_t.off_top,     dw 0xFFFF   ; Filled in code
     iend
 .pm_gp:
     istruc  idt_entry_t     ; General Protection Exception (0x0d)

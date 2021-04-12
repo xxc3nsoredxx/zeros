@@ -22,9 +22,9 @@ exception_test:
 
     ; Test #DF
 .df:
-    mov esp, 0              ; Set stack pointer to bad value
-    pop eax                 ; pop results in #SS being triggered. #SS pushes an
-                            ; error code onto the stack. An invalid stack
+    mov esp, 8              ; Set stack pointer to bad value
+    push eax                ; push results in #SS being triggered. #SS pushes
+                            ; an error code onto the stack. An invalid stack
                             ; triggers a second #SS. #SS is a contributory
                             ; exception, and two contributory exceptions
                             ; trigger a #DF.
@@ -37,6 +37,15 @@ exception_test:
 .np_gdt:
     mov ax, GDT_NOT_PRESENT
     mov es, ax
+
+    ; Test #SS, limit violation
+.ss_limit:
+    mov eax, ss:[0]
+
+    ; Test #SS, bad selector
+.ss_sel:
+    mov ax, GDT_NOT_PRESENT
+    mov ss, ax
 
     ; Test #GP, IDT selector
 .gp_idt:
@@ -59,6 +68,8 @@ exception_test:
     dd  .df
     dd  .np_idt
     dd  .np_gdt
+    dd  .ss_limit
+    dd  .ss_sel
     dd  .gp_idt
     dd  .gp_gdt
     dd  .gp_gen

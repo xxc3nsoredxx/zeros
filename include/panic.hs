@@ -5,7 +5,6 @@ extern eflags_info
 extern panic
 
 ; Panic info struct
-; TODO: proper handling of #DF task
 struc panic_info_t
     .title:                 ; PANIC: [title]
         resd    1           ; char *
@@ -27,9 +26,11 @@ endstruc
 %assign DF_PANIC        1
 %assign NP_IDT_PANIC    2
 %assign NP_GDT_PANIC    3
-%assign GP_IDT_PANIC    4
-%assign GP_GDT_PANIC    5
-%assign GP_GEN_PANIC    6
+%assign SS_LIMIT_PANIC  4
+%assign SS_SEL_PANIC    5
+%assign GP_IDT_PANIC    6
+%assign GP_GDT_PANIC    7
+%assign GP_GEN_PANIC    8
 
 %endif ; PANIC_H_20210408_220825
 ; vim: filetype=asm:syntax=nasm:

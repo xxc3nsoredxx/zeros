@@ -240,6 +240,8 @@ panic:
     dd  df_info
     dd  np_idt_info
     dd  np_gdt_info
+    dd  ss_limit_info
+    dd  ss_sel_info
     dd  gp_idt_info
     dd  gp_gdt_info
     dd  gp_gen_info
@@ -499,6 +501,35 @@ string np_gdt_title
     db  'ATTEMPTTED LOAD OF INVALID SEGMENT'
 endstring
 string np_gdt_error
+    db  'Bad selector'
+endstring
+
+ss_limit_info:
+    istruc panic_info_t
+        at panic_info_t.title,          dd  ss_limit_title
+        at panic_info_t.title_len,      dd  ss_limit_title_len
+        at panic_info_t.has_error,      db  0
+        at panic_info_t.is_task,        db  0
+        at panic_info_t.error_msg,      dd  0
+        at panic_info_t.error_msg_len,  dd  0
+    iend
+string ss_limit_title
+    db  'STACK FAULT - LIMIT VIOLATION'
+endstring
+
+ss_sel_info:
+    istruc panic_info_t
+        at panic_info_t.title,          dd  ss_sel_title
+        at panic_info_t.title_len,      dd  ss_sel_title_len
+        at panic_info_t.has_error,      db  1
+        at panic_info_t.is_task,        db  0
+        at panic_info_t.error_msg,      dd  ss_sel_error
+        at panic_info_t.error_msg_len,  dd  ss_sel_error_len
+    iend
+string ss_sel_title
+    db  'STACK FAULT - INVALID SEGMENT'
+endstring
+string ss_sel_error
     db  'Bad selector'
 endstring
 
