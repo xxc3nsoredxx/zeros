@@ -164,10 +164,8 @@ endstruc
 ;                                     +-------- Bytewise
 %assign GDT_MAIN_TSS_BASE_TOP       0
 ; Expand-up segment because stack can be statically sized
-%assign GDT_DF_STACK_LIM_BOT        0x00ff  ; Set limit to 1 MiB (relative to base)
-                                            ; (0 -> 0x000ff) * 4 KiB pages
-                                            ; = 256 * 4 KiB
-                                            ; = 1 MiB
+%assign GDT_DF_STACK_LIM_BOT        0x1000  ; Set limit to 4 KiB (relative to base)
+                                            ; (0 -> 0x01000)
 %assign GDT_DF_STACK_BASE_BOT       0x0000  ; Stack base: 0x00900000
 %assign GDT_DF_STACK_BASE_TOP_BOT   0x90
 %assign GDT_DF_STACK_ACCESS         0b10010010
@@ -178,12 +176,12 @@ endstruc
 ;                                     | |+----- Code/Data (data)
 ;                                     | +------ Ring 0
 ;                                     +-------- Present
-%assign GDT_DF_STACK_FLAGS_LIM      0b11000000
+%assign GDT_DF_STACK_FLAGS_LIM      0b01000000
 ;                                     ||||+---- Top nybble of limit
 ;                                     |||+----- OS reserved (unused)
 ;                                     ||+------ Reserved
 ;                                     |+------- 32 bit
-;                                     +-------- Pagewise
+;                                     +-------- Bytewise
 %assign GDT_DF_STACK_BASE_TOP       0
 %assign GDT_DF_TSS_LIM_BOT      0x67    ; Set limit to 104 B (relative to base)
                                         ; (0 -> 0x67)

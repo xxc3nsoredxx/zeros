@@ -16,7 +16,7 @@ kmain:
     ; Tests
     call printf_test
 
-    push DWORD SS_SEL_PANIC
+    push DWORD DF_PANIC
     call exception_test
 
 .prompt_loop:

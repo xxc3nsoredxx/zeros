@@ -13,6 +13,8 @@ Physical Address               Virtual Address
             |       Stack       |
 0x00900000  +-------------------+
             |     #DF Stack     |
+0x00901000  +-------------------+
+            |        ...        |
             +-------------------+
             | Multiboot Header  |
 0x00a00000  +-------------------+   0x00000000
@@ -42,17 +44,14 @@ Physical Address               Virtual Address
 * Double Fault handler stack
   * Begins (physical address): `0x00900000` (9 MiB)
     * Bottom of stack
-  * Ends (physical address): `0x00a00000` (10 MiB)
-  * Ends (virtual address): `0x00000000` (origin)
+  * Ends (physical address): `0x00901000` (+4 KiB)
     * Top of stack
-  * Size: 1 MiB
-  * Can consume multiboot header if needed
+  * Size: 4 KiB
 * Multiboot header
   * Begins: ???
   * Ends (physical address): `0x00a00000` (10 MiB)
   * Ends (virtual address): `0x00000000` (origin)
   * Size: ???
-  * Can be consumed by Double Fault handler stack if needed
 * GDT
   * Begins (physical address): `0x00a00000` (10 MiB)
   * Begins (virtual address): `0x00000000` (origin)

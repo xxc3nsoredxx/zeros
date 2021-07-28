@@ -378,7 +378,7 @@ section .tss progbits alloc noexec align=16
 df_tss:                     ; TSS for double fault task
     istruc tss_t
         at tss_t.backlink,  dw 0
-        at tss_t.esp0,      dd 0x100000
+        at tss_t.esp0,      dd 0x1000
         at tss_t.ss0,       dw GDT_DF_STACK
         at tss_t.esp1,      dd 0
         at tss_t.ss1,       dw 0
@@ -391,7 +391,7 @@ df_tss:                     ; TSS for double fault task
         at tss_t.ecx,       dd 0
         at tss_t.edx,       dd 0
         at tss_t.ebx,       dd 0
-        at tss_t.esp,       dd 0x100000
+        at tss_t.esp,       dd 0x1000
         at tss_t.ebp,       dd 0
         at tss_t.esi,       dd 0
         at tss_t.edi,       dd 0
