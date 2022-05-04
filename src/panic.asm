@@ -171,7 +171,7 @@ panic:
     push DWORD error_len
     push error
     call printf
-    jmp .dump_regs
+    ;jmp .dump_regs
 
 .dump_task:
     ; Test for task gate
@@ -238,6 +238,7 @@ panic:
 .panics:
     dd  ud_info
     dd  df_info
+    dd  ts_info
     dd  np_idt_info
     dd  np_gdt_info
     dd  ss_limit_info
@@ -470,6 +471,22 @@ df_info:
     iend
 string df_title
     db  'DOUBLE FAULT'
+endstring
+
+ts_info:
+    istruc panic_info_t
+        at panic_info_t.title,          dd  ts_title
+        at panic_info_t.title_len,      dd  ts_title_len
+        at panic_info_t.has_error,      db  1
+        at panic_info_t.is_task,        db  1
+        at panic_info_t.error_msg,      dd  ts_error
+        at panic_info_t.error_msg_len,  dd  ts_error_len
+    iend
+string ts_title
+    db  'INVALID TSS'
+endstring
+string ts_error
+    db  'Bad task selector'
 endstring
 
 np_idt_info:

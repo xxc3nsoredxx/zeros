@@ -29,6 +29,12 @@ exception_test:
                             ; exception, and two contributory exceptions
                             ; trigger a #DF.
 
+    ; Test #TS
+.ts:
+    ; Attempt a task switch into a bad task selector
+    call GDT_BAD_TSS:0
+    jmp .ts
+
     ; Test #NP, IDT selector
 .np_idt:
     int 0x30
@@ -66,6 +72,7 @@ exception_test:
 .jump_table:
     dd  .ud
     dd  .df
+    dd  .ts
     dd  .np_idt
     dd  .np_gdt
     dd  .ss_limit

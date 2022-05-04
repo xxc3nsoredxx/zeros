@@ -24,13 +24,14 @@ endstruc
 ; Panic selector
 %assign UD_PANIC        0
 %assign DF_PANIC        1
-%assign NP_IDT_PANIC    2
-%assign NP_GDT_PANIC    3
-%assign SS_LIMIT_PANIC  4
-%assign SS_SEL_PANIC    5
-%assign GP_IDT_PANIC    6
-%assign GP_GDT_PANIC    7
-%assign GP_GEN_PANIC    8
+%assign TS_PANIC        2
+%assign NP_IDT_PANIC    3
+%assign NP_GDT_PANIC    4
+%assign SS_LIMIT_PANIC  5
+%assign SS_SEL_PANIC    6
+%assign GP_IDT_PANIC    7
+%assign GP_GDT_PANIC    8
+%assign GP_GEN_PANIC    9
 
 %endif ; PANIC_H_20210408_220825
 ; vim: filetype=asm:syntax=nasm:

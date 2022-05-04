@@ -206,6 +206,73 @@ endstruc
 ;                                 |+------- 32 bit
 ;                                 +-------- Bytewise
 %assign GDT_DF_TSS_BASE_TOP     0
+; Expand-up segment because stack can be statically sized
+%assign GDT_TS_STACK_LIM_BOT        0x1000  ; Set limit to 4 KiB (relative to base)
+                                            ; (0 -> 0x01000)
+%assign GDT_TS_STACK_BASE_BOT       0x1000  ; Stack base: 0x00901000
+%assign GDT_TS_STACK_BASE_TOP_BOT   0x90
+%assign GDT_TS_STACK_ACCESS         0b10010010
+;                                     |\|||||+- Set by CPU
+;                                     | ||||+-- Writable
+;                                     | |||+--- Grows up
+;                                     | ||+---- Not executable
+;                                     | |+----- Code/Data (data)
+;                                     | +------ Ring 0
+;                                     +-------- Present
+%assign GDT_TS_STACK_FLAGS_LIM      0b01000000
+;                                     ||||+---- Top nybble of limit
+;                                     |||+----- OS reserved (unused)
+;                                     ||+------ Reserved
+;                                     |+------- 32 bit
+;                                     +-------- Bytewise
+%assign GDT_TS_STACK_BASE_TOP       0
+%assign GDT_TS_TSS_LIM_BOT      0x67    ; Set limit to 104 B (relative to base)
+                                        ; (0 -> 0x67)
+                                        ; = 0x68 B
+                                        ; = 104 B
+%assign GDT_TS_TSS_BASE_BOT     0x0eb0  ; TSS base: 0x00a00eb0
+                                        ; [code] - 3 * 0x67 (aligned down to 16 B)
+                                        ; Effective size: 0x70
+%assign GDT_TS_TSS_BASE_TOP_BOT 0xa0
+%assign GDT_TS_TSS_ACCESS       0b10001001
+;                                 |\||||\|
+;                                 | |||| +- TSS (available)
+;                                 | |||+--- Segment selector
+;                                 | ||+---- 32 bit TSS
+;                                 | |+----- System
+;                                 | +------ Ring 0
+;                                 +-------- Present
+%assign GDT_TS_TSS_FLAGS_LIM    0b01000000
+;                                 ||||+---- Top nybble of limit
+;                                 |||+----- OS reserved (unused)
+;                                 ||+------ Reserved
+;                                 |+------- 32 bit
+;                                 +-------- Bytewise
+%assign GDT_TS_TSS_BASE_TOP     0
+
+%assign GDT_BAD_TSS_LIM_BOT         0x67    ; Set limit to 104 B (relative to base)
+                                            ; (0 -> 0x67)
+                                            ; = 0x68 B
+                                            ; = 104 B
+%assign GDT_BAD_TSS_BASE_BOT        0x0e40  ; TSS base: 0x00a00e40
+                                            ; [code] - 4 * 0x67 (aligned down to 16 B)
+                                            ; Effective size: 0x70
+%assign GDT_BAD_TSS_BASE_TOP_BOT    0xa0
+%assign GDT_BAD_TSS_ACCESS          0b10001001
+;                                     |\||||\|
+;                                     | |||| +- TSS (available)
+;                                     | |||+--- Segment selector
+;                                     | ||+---- 32 bit TSS
+;                                     | |+----- System
+;                                     | +------ Ring 0
+;                                     +-------- Present
+%assign GDT_BAD_TSS_FLAGS_LIM       0b01000000
+;                                     ||||+---- Top nybble of limit
+;                                     |||+----- OS reserved (unused)
+;                                     ||+------ Reserved
+;                                     |+------- 32 bit
+;                                     +-------- Bytewise
+%assign GDT_BAD_TSS_BASE_TOP        0
 
 %assign GDT_READ_ONLY   0b10010000
 ;                         |\|||||+- Set by CPU
@@ -226,6 +293,11 @@ endstruc
 %assign GDT_DF_STACK        0x40
 %assign GDT_DF_TSS          0x48
 %assign GDT_DF_TSS_READ     0x50
+%assign GDT_TS_STACK        0x58
+%assign GDT_TS_TSS          0x60
+%assign GDT_TS_TSS_READ     0x68
+%assign GDT_BAD_TSS         0x70
+%assign GDT_BAD_TSS_READ    0x78
 
 %endif
 

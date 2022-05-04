@@ -4,6 +4,7 @@
 ; P-Mode exceptions (by vector)
 extern ud_int
 extern df_int
+extern ts_int
 extern np_int
 extern ss_int
 extern gp_int

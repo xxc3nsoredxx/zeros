@@ -124,7 +124,7 @@ kstart:
 
     hlt                     ; Halt the CPU after leaving kernel
 
-section .gdt progbits alloc noexec nowrite align=8
+section .gdt progbits alloc noexec nowrite align=16
 gdt:                        ; The start of the GDT
 .null:                      ; Null selector (GDT offset = 0x00)
     dq  0                   ; All zeros
@@ -218,6 +218,51 @@ gdt:                        ; The start of the GDT
         at gdt_entry_t.flags_lim,       db GDT_DF_TSS_FLAGS_LIM
         at gdt_entry_t.base_top,        db GDT_DF_TSS_BASE_TOP
     iend
+.ts_stack:                  ; #TS task stack selector (GDT offset = 0x58)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_TS_STACK_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_TS_STACK_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_TS_STACK_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_TS_STACK_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_TS_STACK_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_TS_STACK_BASE_TOP
+    iend
+.ts_tss:                    ; #TS task selector (GDT offset = 0x60)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_TS_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_TS_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_TS_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_TS_TSS_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_TS_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_TS_TSS_BASE_TOP
+    iend
+.ts_tss_read:               ; #TS TSS read access (GDT offset = 0x68)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_TS_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_TS_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_TS_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_READ_ONLY
+        at gdt_entry_t.flags_lim,       db GDT_TS_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_TS_TSS_BASE_TOP
+    iend
+.bad_tss:                   ; Bad TSS - invalid ss (GDT offset = 0x70)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_BAD_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_BAD_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_BAD_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_BAD_TSS_ACCESS
+        at gdt_entry_t.flags_lim,       db GDT_BAD_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_BAD_TSS_BASE_TOP
+    iend
+.bad_tss_read:              ; Bad TSS read access (GDT offset = 0x78)
+    istruc  gdt_entry_t
+        at gdt_entry_t.limit_bot,       dw GDT_BAD_TSS_LIM_BOT
+        at gdt_entry_t.base_bot,        dw GDT_BAD_TSS_BASE_BOT
+        at gdt_entry_t.base_top_bot,    db GDT_BAD_TSS_BASE_TOP_BOT
+        at gdt_entry_t.access,          db GDT_READ_ONLY
+        at gdt_entry_t.flags_lim,       db GDT_BAD_TSS_FLAGS_LIM
+        at gdt_entry_t.base_top,        db GDT_BAD_TSS_BASE_TOP
+    iend
 .end:                       ; End of GDT
 gdt_desc:                   ; GDT descriptor
     istruc  gdt_desc_t
@@ -225,7 +270,7 @@ gdt_desc:                   ; GDT descriptor
         at gdt_desc_t.gdt,      dd _gdt_start
     iend
 
-section .idt progbits alloc noexec nowrite align=8
+section .idt progbits alloc noexec nowrite align=16
 idt:                        ; Start of the IDT
 ; P-Mode exceptions (0x00 - 0x1f)
 %rep 6                      ; Null entries
@@ -260,15 +305,21 @@ idt:                        ; Start of the IDT
         at idt_entry_t.type_attr,   db TASK_GATE
         at idt_entry_t.off_top,     dw 0    ; Not used for task gates
     iend
-%rep 2                      ; Null entries
-    istruc  idt_entry_t
+    istruc  idt_entry_t     ; Null entry
         at idt_entry_t.off_bot,     dw 0
         at idt_entry_t.selector,    dw 0
         at idt_entry_t.zero,        db 0
         at idt_entry_t.type_attr,   db IDT_NOT_PRESENT
         at idt_entry_t.off_top,     dw 0
     iend
-%endrep
+.pm_ts:                     ; Invalid TSS Exception (0x0a)
+    istruc  idt_entry_t
+        at idt_entry_t.off_bot,     dw 0    ; Not used for task gates
+        at idt_entry_t.selector,    dw GDT_TS_TSS
+        at idt_entry_t.zero,        db 0
+        at idt_entry_t.type_attr,   db TASK_GATE
+        at idt_entry_t.off_top,     dw 0    ; Not used for task gates
+    iend
 .pm_np:                     ; Segment Not Present (0x0b)
     istruc  idt_entry_t
         at idt_entry_t.off_bot,     dw 0xFFFF   ; Filled in code
@@ -375,6 +426,66 @@ idt_desc:                   ; IDT descriptor
 
 ; Newer TSS's at the top
 section .tss progbits alloc noexec align=16
+bad_tss:                    ; Bad TSS
+    istruc tss_t
+        at tss_t.backlink,  dw 0
+        at tss_t.esp0,      dd 0
+        at tss_t.ss0,       dw GDT_CODE_INDEX
+        at tss_t.esp1,      dd 0
+        at tss_t.ss1,       dw 0
+        at tss_t.esp2,      dd 0
+        at tss_t.ss2,       dw 0
+        at tss_t.cr3,       dd 0
+        at tss_t.eip,       dd 0
+        at tss_t.eflags,    dd 0
+        at tss_t.eax,       dd 0
+        at tss_t.ecx,       dd 0
+        at tss_t.edx,       dd 0
+        at tss_t.ebx,       dd 0
+        at tss_t.esp,       dd 0
+        at tss_t.ebp,       dd 0
+        at tss_t.esi,       dd 0
+        at tss_t.edi,       dd 0
+        at tss_t.es,        dw GDT_DATA_INDEX
+        at tss_t.cs,        dw GDT_CODE_INDEX
+        at tss_t.ss,        dw GDT_CODE_INDEX
+        at tss_t.ds,        dw GDT_DATA_INDEX
+        at tss_t.fs,        dw GDT_DATA_INDEX
+        at tss_t.gs,        dw GDT_VRAM_INDEX
+        at tss_t.trap,      db 0
+        at tss_t.io_map,    dw 0x68 ; Unused - set offset to 1 B after TSS
+    iend
+
+ts_tss:                     ; TSS for invalid tss task
+    istruc tss_t
+        at tss_t.backlink,  dw 0
+        at tss_t.esp0,      dd 0x1000
+        at tss_t.ss0,       dw GDT_TS_STACK
+        at tss_t.esp1,      dd 0
+        at tss_t.ss1,       dw 0
+        at tss_t.esp2,      dd 0
+        at tss_t.ss2,       dw 0
+        at tss_t.cr3,       dd 0
+        at tss_t.eip,       dd ts_int
+        at tss_t.eflags,    dd 0
+        at tss_t.eax,       dd 0
+        at tss_t.ecx,       dd 0
+        at tss_t.edx,       dd 0
+        at tss_t.ebx,       dd 0
+        at tss_t.esp,       dd 0x1000
+        at tss_t.ebp,       dd 0
+        at tss_t.esi,       dd 0
+        at tss_t.edi,       dd 0
+        at tss_t.es,        dw GDT_DATA_INDEX
+        at tss_t.cs,        dw GDT_CODE_INDEX
+        at tss_t.ss,        dw GDT_TS_STACK
+        at tss_t.ds,        dw GDT_DATA_INDEX
+        at tss_t.fs,        dw GDT_DATA_INDEX
+        at tss_t.gs,        dw GDT_VRAM_INDEX
+        at tss_t.trap,      db 0
+        at tss_t.io_map,    dw 0x68 ; Unused - set offset to 1 B after TSS
+    iend
+
 df_tss:                     ; TSS for double fault task
     istruc tss_t
         at tss_t.backlink,  dw 0

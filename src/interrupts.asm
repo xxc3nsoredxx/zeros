@@ -31,6 +31,15 @@ df_int:
     push DF_PANIC
     call panic
 
+; TODO: there's something wonky here...
+; Invalid TSS Exception
+; Class: fault
+; Error code: yes
+ts_int:
+    ; TODO: differentiate between #TS types
+    push TS_PANIC
+    call panic
+
 ; Segment Not Present
 ; Class: fault
 ; Error code: yes

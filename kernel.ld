@@ -69,7 +69,7 @@ SECTIONS
      *      0x1000 - n * 0x70
      * LDA: Right before code
      */
-    _total_tss_size = 2 * 0x70;
+    _total_tss_size = 4 * 0x70;
     _tss_start = _code_vma_start - _total_tss_size;
     .tss _tss_start : AT(LOADADDR(.gdt) + 4K - _total_tss_size)
     {

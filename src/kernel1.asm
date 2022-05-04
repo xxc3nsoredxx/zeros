@@ -16,8 +16,9 @@ kmain:
     ; Tests
     call printf_test
 
-    push DWORD DF_PANIC
-    call exception_test
+    ; TODO: THIS SHIT BROKEN BRUH
+    ;push DWORD TS_PANIC
+    ;call exception_test
 
 .prompt_loop:
     push DWORD prompt_len   ; Show prompt
