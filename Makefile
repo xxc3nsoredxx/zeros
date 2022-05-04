@@ -30,7 +30,7 @@ run:
 	$(QEMU) $(QFLAGS)
 
 runx:
-	startx ./qemu_zeros.xinitrc
+	command startx ./qemu_zeros.xinitrc -- vt$(shell tty | sed -e 's|/dev/tty||')
 
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T kernel.ld $^ -o $@
