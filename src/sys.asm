@@ -117,6 +117,32 @@ clear:
 .blanks:
     dd  0x00200020
 
+; u32 streq (char *str1, char *str2, u32 max_len)
+; Compare strings str1 and str2 for equality, stopping after max_len bytes have
+; been checked.
+; Return:
+;   0 if equal
+;   1 if inequal
+streq:
+    push ebp
+    mov ebp, esp
+    push esi
+    push edi
+
+    mov eax, 1              ; Assume inequal
+    mov edx, 0
+    mov esi, [ebp + 8]
+    mov edi, [ebp + 12]
+    mov ecx, [ebp + 16]
+    repe cmpsb
+    cmovz eax, edx          ; Set only if all bytes in both strings equal
+
+    pop edi
+    pop esi
+    mov esp, ebp
+    pop ebp
+    ret 12
+
 ;;;;;;;;;;;;
 ;; OUTPUT ;;
 ;;;;;;;;;;;;

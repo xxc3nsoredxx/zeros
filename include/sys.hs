@@ -6,6 +6,7 @@ extern getsn
 
 ; Miscellaneous functions
 extern clear
+extern streq
 
 ; Output functions
 extern printf

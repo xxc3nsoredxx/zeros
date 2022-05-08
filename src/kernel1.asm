@@ -21,8 +21,32 @@ kmain:
     ;push DWORD TS_PANIC
     ;call exception_test
 
+.prompt_loop:
+    push DWORD prompt_len   ; Show prompt
+    push prompt
+    call puts
+
+    push DWORD [input_len]  ; Get input
+    push input_buf
+    call getsn
+    push eax                ; Save read count
+
+    mov eax, 0x0d           ; Go to new line
+    push eax
+    call putch
+    mov eax, 0x0a
+    push eax
+    call putch
+
+    push DWORD command_sector_len   ; Test for the "sector" command
+    push command_sector
+    push input_buf
+    call streq
+    jnz .no_sector
+
     push DWORD 0
     call read_sector
+    jnz .no_sector
 
     push DWORD sector_print_len
     push sector_print
@@ -57,27 +81,9 @@ kmain:
 .loop_next:
     cmp ebx, 512
     jnz .print_sector
-
-
     jmp .prompt_loop
 
-.prompt_loop:
-    push DWORD prompt_len   ; Show prompt
-    push prompt
-    call puts
-
-    push DWORD [input_len]  ; Get input
-    push input_buf
-    call getsn
-    push eax                ; Save read count
-
-    mov eax, 0x0d           ; Go to new line
-    push eax
-    call putch
-    mov eax, 0x0a
-    push eax
-    call putch
-
+.no_sector:
     push input_buf          ; Print input
     call puts               ; The length is alread at the top of the stack
 
@@ -95,6 +101,10 @@ endstring
 
 string prompt
     db  'ZerOS > '
+endstring
+
+string command_sector
+    db  'sector'
 endstring
 
 section .data
