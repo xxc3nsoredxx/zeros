@@ -3,6 +3,7 @@
     bits    32
 
 %include "gdt.hs"
+%include "ide.hs"
 %include "idt.hs"
 %include "kb.hs"
 %include "multiboot.hs"
@@ -119,9 +120,13 @@ kstart:
 
     call vga_init           ; Initialize the screen
     call kb_init            ; Initialize the keyboard
+    call ide_init           ; Initialize the drive
+    test eax, eax
+    jnz .exit
 
     call kmain              ; Kernel main function
 
+.exit:
     hlt                     ; Halt the CPU after leaving kernel
 
 section .gdt progbits alloc noexec nowrite align=16

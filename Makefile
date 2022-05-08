@@ -14,7 +14,7 @@ LD = i386-elf-ld
 LFLAGS = -Map=./ --fatal-warnings
 QEMU = qemu-system-i386
 QFLAGS = -curses -drive file=zeros.iso,format=raw -s -enable-kvm
-OBJS = interrupts.o kb.o kernel0.o kernel1.o panic.o sys.o tests.o vga.o
+OBJS = ide.o interrupts.o kb.o kernel0.o kernel1.o panic.o sys.o tests.o vga.o
 
 .PHONY: all relink install run
 all: kernel.bin
@@ -35,13 +35,16 @@ runx:
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T kernel.ld $^ -o $@
 
+$(OBJ)/ide.o: ide.asm ide.hs sys.hs
+	$(AS) $(AFLAGS) $< -o $@
+
 $(OBJ)/interrupts.o: interrupts.asm idt.hs kb.hs panic.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/kb.o: kb.asm kb.hs idt.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel0.o: kernel0.asm gdt.hs idt.hs kb.hs multiboot.hs tss.hs vga.hs
+$(OBJ)/kernel0.o: kernel0.asm gdt.hs ide.hs idt.hs kb.hs multiboot.hs tss.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/kernel1.o: kernel1.asm misc.hs panic.hs sys.hs tests.hs
