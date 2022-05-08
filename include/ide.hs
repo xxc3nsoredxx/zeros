@@ -5,9 +5,13 @@ extern drive_identify
 extern drive_interrupts
 extern drive_select
 extern ide_init
+extern read_sector
+
+extern sector               ; Contains the last read sector
 
 ; ATA I/O registers
 %assign ATA_REG_PRIM_DATA       0x01f0
+%assign ATA_REG_PRIM_FEATURES   0x01f1
 %assign ATA_REG_PRIM_SECT_COUNT 0x01f2
 %assign ATA_REG_PRIM_LBA_LO     0x01f3
 %assign ATA_REG_PRIM_LBA_MID    0x01f4
@@ -21,7 +25,8 @@ extern ide_init
 %assign ATA_REG_PRIM_CONTROL    0x03f6
 
 ; ATA commands
-%assign ATA_CMD_IDENTIFY    0xec
+%assign ATA_CMD_READ_SECTORS    0x20
+%assign ATA_CMD_IDENTIFY        0xec
 
 ; Drive / Head Register
 ; bit 0-3:  CHS - bits 0-3 of head
@@ -33,6 +38,8 @@ extern ide_init
 %assign ATA_DRIVE_HEAD_CONST 0xa0
 %assign ATA_DRV_MASTER  0x00
 %assign ATA_DRV_SLAVE   0x10
+%assign ATA_LBA_NO      0x00
+%assign ATA_LBA_YES     0x40
 
 ; Status Register
 ; bit 0:    ERR - indicates error (clear with new command or reset)
@@ -45,6 +52,7 @@ extern ide_init
 ; bit 7:    BSY - indicates drive preparing to send/receive data
 %assign ATA_STATUS_ERR  0x01
 %assign ATA_STATUS_DRQ  0x08
+%assign ATA_STATUS_DF   0x20
 %assign ATA_STATUS_BSY  0x80
 
 ; Device Control Register

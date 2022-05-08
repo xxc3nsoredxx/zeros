@@ -47,7 +47,7 @@ $(OBJ)/kb.o: kb.asm kb.hs idt.hs
 $(OBJ)/kernel0.o: kernel0.asm gdt.hs ide.hs idt.hs kb.hs multiboot.hs tss.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel1.o: kernel1.asm misc.hs panic.hs sys.hs tests.hs
+$(OBJ)/kernel1.o: kernel1.asm ide.hs misc.hs panic.hs sys.hs tests.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/panic.o: panic.asm panic.hs misc.hs sys.hs vga.hs

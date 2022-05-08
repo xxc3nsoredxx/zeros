@@ -187,6 +187,78 @@ ide_init:
     pop ebp
     ret
 
+; u32 read_sector (u32 sector)
+; Read the given sector off the disk. For now, only supports master.
+; Return:
+;   0 on success
+;   1 on failure
+read_sector:
+    push ebp
+    mov ebp, esp
+
+    mov edx, [ebp + 8]      ; Get bits 24-27 of sector number
+    shr edx, 24
+    and edx, 0x0f
+
+    mov al, dl              ; Set master in LBA mode
+    or  al, ATA_DRV_MASTER | ATA_LBA_YES
+    mov dx, ATA_REG_PRIM_DRIVE_HEAD
+    out dx, al
+
+    mov al, 0               ; Write NULL to Features Register to waste time
+    mov dx, ATA_REG_PRIM_FEATURES
+    out dx, al
+
+    mov al, 1               ; Read single sector
+    mov dx, ATA_REG_PRIM_SECT_COUNT
+    out dx, al
+
+    mov eax, [ebp + 8]      ; Set up the rest of the LBA number registers
+    mov dx, ATA_REG_PRIM_LBA_LO
+    out dx, al
+    shr eax, 8
+    mov dx, ATA_REG_PRIM_LBA_MID
+    out dx, al
+    shr eax, 8
+    mov dx, ATA_REG_PRIM_LBA_HI
+    out dx, al
+
+    mov al, ATA_CMD_READ_SECTORS    ; Send the READ SECTORS command
+    mov dx, ATA_REG_PRIM_COMMAND
+    out dx, al
+
+    mov dx, ATA_REG_PRIM_STATUS ; Poll until BSY clear and DRQ set
+.poll_data:
+    in  al, dx
+    test al, ATA_STATUS_ERR | ATA_STATUS_DF ; Failed if ERR or DF set
+    jnz .read_sector_failed
+    and al, ATA_STATUS_DRQ | ATA_STATUS_BSY
+    cmp al, ATA_STATUS_DRQ
+    jnz .poll_data
+
+    mov ecx, 0              ; Read 256 * 16 bits of sector data
+    mov dx, ATA_REG_PRIM_DATA
+.sector_read:
+    in  ax, dx
+    mov [sector + ecx*2], ax
+    inc ecx
+    cmp ecx, 256
+    jnz .sector_read
+
+    mov eax, 0              ; READ SECTOR completed successfully
+    jmp .done
+
+.read_sector_failed:
+    push DWORD read_sector_failed_len
+    push read_sector_failed
+    call puts
+    mov eax, 1
+
+.done:
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 section .rodata
 string drive_not_found
     db  'Selected drive not found!', 0x0a
@@ -200,7 +272,13 @@ endstring
 string ide_init_failed
     db  'Drive initialization failed!', 0x0a
 endstring
+string read_sector_failed
+    db  'READ SECTOR failed', 0x0a
+endstring
 
 section .bss
 id_data:
     resw 256
+
+sector:
+    resb 512
