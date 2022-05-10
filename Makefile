@@ -14,8 +14,8 @@ LD = i386-elf-ld
 LFLAGS = -Map=./ --fatal-warnings
 QEMU = qemu-system-i386
 QFLAGS = -curses -drive file=zeros.iso,format=raw -s -enable-kvm
-OBJS  = ext2.o ide.o interrupts.o kb.o kernel0.o kernel1.o panic.o sys.o tests.o
-OBJS += vga.o
+OBJS  = ext2.o ide.o interrupts.o kb.o kernel0.o kernel1.o mbr.o panic.o sys.o
+OBJS += tests.o vga.o
 
 .PHONY: all relink install run
 all: kernel.bin
@@ -36,10 +36,10 @@ runx:
 $(BIN)/kernel.bin: $(OBJS)
 	$(LD) $(LFLAGS) -T kernel.ld $^ -o $@
 
-$(OBJ)/ext2.o: ext2.asm ext2.hs
+$(OBJ)/ext2.o: ext2.asm ext2.hs ide.hs mbr.hs misc.hs sys.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/ide.o: ide.asm ide.hs sys.hs
+$(OBJ)/ide.o: ide.asm ide.hs misc.hs sys.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/interrupts.o: interrupts.asm idt.hs kb.hs panic.hs vga.hs
@@ -51,7 +51,10 @@ $(OBJ)/kb.o: kb.asm kb.hs idt.hs
 $(OBJ)/kernel0.o: kernel0.asm gdt.hs ide.hs idt.hs kb.hs multiboot.hs tss.hs vga.hs
 	$(AS) $(AFLAGS) $< -o $@
 
-$(OBJ)/kernel1.o: kernel1.asm ide.hs misc.hs panic.hs sys.hs tests.hs
+$(OBJ)/kernel1.o: kernel1.asm ext2.hs ide.hs misc.hs panic.hs sys.hs tests.hs
+	$(AS) $(AFLAGS) $< -o $@
+
+$(OBJ)/mbr.o: mbr.asm mbr.hs ide.hs
 	$(AS) $(AFLAGS) $< -o $@
 
 $(OBJ)/panic.o: panic.asm panic.hs misc.hs sys.hs vga.hs

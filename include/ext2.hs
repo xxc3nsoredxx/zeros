@@ -5,6 +5,9 @@
 ; Version: May 8th, 2019
 ; See: https://www.nongnu.org/ext2-doc/
 
+extern ext2_info
+extern read_superblock
+
 ; The Ext2 superblock
 ; All types are little-endian ints unless otherwise stated
 ; 1024 bytes long
@@ -106,14 +109,12 @@ struc ext2_sb_t
         resd    4
     .s_def_hash_version:    ; Default hash version for directory indexing
         resb    1
-    .padding:               ; Reserved for future expansion
-        resb    3
+        alignb  4           ; Reserved for future expansion
     .s_default_mount_options:   ; Default mount options for filesystem
         resd    1
     .s_first_meta_bg:       ; Block group ID of the first meta block group
         resd    1
-    .unused:                ; Reserved for future expansion
-        resb    760
+        alignb  1024        ; Reserved for future expansion
 endstruc
 
 %assign EXT2_SUPER_MAGIC 0xef53

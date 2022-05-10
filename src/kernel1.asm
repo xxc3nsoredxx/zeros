@@ -1,12 +1,12 @@
     ; Kernel 1
     bits    32
 
+%include "ext2.hs"
 %include "ide.hs"
 %include "misc.hs"
 %include "panic.hs"
 %include "sys.hs"
 %include "tests.hs"
-%include "vga.hs"
 
 section .text
     global  kmain           ; Make kmain visible
@@ -15,11 +15,13 @@ kmain:
     call clear              ; Clear sets bg/fg colors in each cell
 
     ; Tests
-    call printf_test
+    ;call printf_test
 
     ; TODO: THIS SHIT BROKEN BRUH
     ;push DWORD TS_PANIC
     ;call exception_test
+
+    call ext2_info
 
 .prompt_loop:
     push DWORD prompt_len   ; Show prompt
