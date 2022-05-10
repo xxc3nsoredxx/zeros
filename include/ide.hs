@@ -7,8 +7,6 @@ extern drive_select
 extern ide_init
 extern read_sector
 
-extern sector               ; Contains the last read sector
-
 ; ATA I/O registers
 %assign ATA_REG_PRIM_DATA       0x01f0
 %assign ATA_REG_PRIM_FEATURES   0x01f1

@@ -44,7 +44,9 @@ kmain:
     call streq
     jnz .no_sector
 
+    push DWORD 1
     push DWORD 0
+    push sector
     call read_sector
     jnz .no_sector
 
@@ -116,3 +118,6 @@ input_buf:
     resb 100
 input_buf_end:
     resb 1
+
+sector:
+    resb 512

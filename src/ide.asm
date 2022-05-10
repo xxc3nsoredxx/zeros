@@ -14,6 +14,7 @@ section .text
 drive_identify:
     push ebp
     mov ebp, esp
+    push edi
 
     mov al, 0               ; The following registers need to all be set to 0
     mov dx, ATA_REG_PRIM_SECT_COUNT
@@ -58,14 +59,10 @@ drive_identify:
     test al, ATA_STATUS_ERR ; IDENTIFY data ready if ERR clear
     jnz .identify_error
 
-    mov ecx, 0              ; Read 256 * 16 bits of IDENTIFY data
+    mov ecx, 256            ; Read 256 * 16 bits of IDENTIFY data
     mov dx, ATA_REG_PRIM_DATA
-.id_read:
-    in  ax, dx
-    mov [id_data + ecx*2], ax
-    inc ecx
-    cmp ecx, 256
-    jnz .id_read
+    mov edi, id_data
+    rep insw
 
     mov eax, 0              ; IDENTIFY completed successfully
     jmp .done
@@ -92,6 +89,7 @@ drive_identify:
     jmp .done
 
 .done:
+    pop edi
     mov esp, ebp
     pop ebp
     ret
@@ -187,16 +185,25 @@ ide_init:
     pop ebp
     ret
 
-; u32 read_sector (u32 sector)
-; Read the given sector off the disk. For now, only supports master.
+; u32 read_sector (void *dest, u32 sector, u32 count)
+; Read count sectors off the disk starting at the given sector. Store tha data
+; in the address given by dest. For now, only supports master.
+; A count of 0 means 256 sectors
 ; Return:
 ;   0 on success
 ;   1 on failure
 read_sector:
     push ebp
     mov ebp, esp
+    push ebx
+    push edi
 
-    mov edx, [ebp + 8]      ; Get bits 24-27 of sector number
+    mov ebx, [ebp + 16]     ; Save the "count", but truncated to a single byte
+    and ebx, 0xff
+
+    mov edi, [ebp + 8]      ; Save the destination pointer
+
+    mov edx, [ebp + 12]     ; Get bits 24-27 of sector number
     shr edx, 24
     and edx, 0x0f
 
@@ -209,11 +216,11 @@ read_sector:
     mov dx, ATA_REG_PRIM_FEATURES
     out dx, al
 
-    mov al, 1               ; Read single sector
+    mov al, bl              ; Read "count" sectors
     mov dx, ATA_REG_PRIM_SECT_COUNT
     out dx, al
 
-    mov eax, [ebp + 8]      ; Set up the rest of the LBA number registers
+    mov eax, [ebp + 12]     ; Set up the rest of the LBA number registers
     mov dx, ATA_REG_PRIM_LBA_LO
     out dx, al
     shr eax, 8
@@ -227,6 +234,7 @@ read_sector:
     mov dx, ATA_REG_PRIM_COMMAND
     out dx, al
 
+.sector_loop:
     mov dx, ATA_REG_PRIM_STATUS ; Poll until BSY clear and DRQ set
 .poll_data:
     in  al, dx
@@ -236,16 +244,14 @@ read_sector:
     cmp al, ATA_STATUS_DRQ
     jnz .poll_data
 
-    mov ecx, 0              ; Read 256 * 16 bits of sector data
+    mov ecx, 256            ; Read 256 * 16 bits of sector data
     mov dx, ATA_REG_PRIM_DATA
-.sector_read:
-    in  ax, dx
-    mov [sector + ecx*2], ax
-    inc ecx
-    cmp ecx, 256
-    jnz .sector_read
+    rep insw
 
-    mov eax, 0              ; READ SECTOR completed successfully
+    dec ebx                 ; Check for more sectors to read
+    jnz .sector_loop
+
+    mov eax, 0              ; READ SECTOR(s) completed successfully
     jmp .done
 
 .read_sector_failed:
@@ -255,9 +261,11 @@ read_sector:
     mov eax, 1
 
 .done:
+    pop edi
+    pop ebx
     mov esp, ebp
     pop ebp
-    ret 4
+    ret 12
 
 section .rodata
 string drive_not_found
@@ -279,6 +287,3 @@ endstring
 section .bss
 id_data:
     resw 256
-
-sector:
-    resb 512
