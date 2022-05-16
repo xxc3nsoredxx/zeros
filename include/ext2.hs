@@ -151,6 +151,26 @@ endstruc
 %assign EXT2_BZIP2_ALG  0x00000008
 %assign EXT2_LZO_ALG    0x00000010
 
+; An Ext2 block group descriptor
+; All block ID's are absolute blocks
+struc ext2_bg_t
+    .bg_block_bitmap:       ; Block ID of the first block of the block bitmap
+        resd    1
+    .bg_inode_bitmap:       ; Block ID of the first block of the inode bitmap
+        resd    1
+    .bg_inode_table:        ; Block ID of the first block of the inode table
+        resd    1
+    .bg_free_blocks_count:  ; Number of free blocks in this group
+        resw    1
+    .bg_free_inodes_count:  ; Number of free inodes in this group
+        resw    1
+    .bg_used_dirs_count:    ; Number of inodes that are directories in this
+        resw    1           ; group
+        alignb  4           ; Padded to align to 32 bit boundary
+    .bg_reserved:           ; Reserved for future expansion
+        resb    12
+endstruc
+
 ; An Ext2 inode
 struc ext2_inode_t
     .i_mode:                ; File mode (type and access rights)

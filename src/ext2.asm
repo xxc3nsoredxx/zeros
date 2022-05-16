@@ -127,57 +127,9 @@ string info_failed
     db  'Failed to get Ext2 info!', 0x0a
 endstring
 
-section .data
-superblock:
-    istruc ext2_sb_t
-        at ext2_sb_t.s_inodes_count,            dd  0
-        at ext2_sb_t.s_blocks_count,            dd  0
-        at ext2_sb_t.s_r_blocks_count,          dd  0
-        at ext2_sb_t.s_free_blocks_count,       dd  0
-        at ext2_sb_t.s_free_inodes_count,       dd  0
-        at ext2_sb_t.s_first_data_block,        dd  0
-        at ext2_sb_t.s_log_block_size,          dd  0
-        at ext2_sb_t.s_log_frag_size,           dd  0
-        at ext2_sb_t.s_blocks_per_group,        dd  0
-        at ext2_sb_t.s_frags_per_group,         dd  0
-        at ext2_sb_t.s_inodes_per_group,        dd  0
-        at ext2_sb_t.s_mtime,                   dd  0
-        at ext2_sb_t.s_wtime,                   dd  0
-        at ext2_sb_t.s_mnt_count,               dw  0
-        at ext2_sb_t.s_max_mnt_count,           dw  0
-        at ext2_sb_t.s_magic,                   dw  0
-        at ext2_sb_t.s_state,                   dw  0
-        at ext2_sb_t.s_errors,                  dw  0
-        at ext2_sb_t.s_minor_rev_level,         dw  0
-        at ext2_sb_t.s_lastcheck,               dd  0
-        at ext2_sb_t.s_checkinterval,           dd  0
-        at ext2_sb_t.s_creator_os,              dd  0
-        at ext2_sb_t.s_rev_level,               dd  0
-        at ext2_sb_t.s_def_resuid,              dw  0
-        at ext2_sb_t.s_def_resgid,              dw  0
-        at ext2_sb_t.s_first_ino,               dd  0
-        at ext2_sb_t.s_inode_size,              dw  0
-        at ext2_sb_t.s_block_group_nr,          dw  0
-        at ext2_sb_t.s_feature_compat,          dd  0
-        at ext2_sb_t.s_feature_incompat,        dd  0
-        at ext2_sb_t.s_feature_ro_compat,       dd  0
-        at ext2_sb_t.s_uuid,                    times 4     dd  0
-        at ext2_sb_t.s_volume_name,             times 16    db  0
-        at ext2_sb_t.s_last_mounted,            times 64    db  0
-        at ext2_sb_t.s_algo_bitmap,             dd  0
-        at ext2_sb_t.s_prealloc_blocks,         db  0
-        at ext2_sb_t.s_prealloc_dir_blocks,     db  0
-        at ext2_sb_t.s_journal_uuid,            times 16    db  0
-        at ext2_sb_t.s_journal_inum,            dd  0
-        at ext2_sb_t.s_journal_dev,             dd  0
-        at ext2_sb_t.s_last_orphan,             dd  0
-        at ext2_sb_t.s_hash_seed,               times 4     dd  0
-        at ext2_sb_t.s_def_hash_version,        db  0
-        at ext2_sb_t.s_default_mount_options,   dd  0
-        at ext2_sb_t.s_first_meta_bg,           dd  0
-    iend
-
 section .bss
+superblock:                 ; The Ext2 superblock
+    resb 1024
 block_size:                 ; Block size, calculated after reading the
     resd 1                  ; subperblock
 blocks_per_group:           ; Blocks per group, saved after reading the
