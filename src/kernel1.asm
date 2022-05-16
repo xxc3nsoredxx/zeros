@@ -40,6 +40,24 @@ kmain:
     push eax
     call putch
 
+    push DWORD command_inode_len   ; Test for the "inode" command
+    push command_inode
+    push input_buf
+    call streq
+    jnz .no_inode
+
+    push DWORD 2
+    call find_inode
+
+    push edx
+    push eax
+    push inode_print_len
+    push inode_print
+    call printf
+
+    jmp .prompt_loop
+
+.no_inode:
     push DWORD command_sector_len   ; Test for the "sector" command
     push command_sector
     push input_buf
@@ -96,6 +114,9 @@ kmain:
     ret
 
 section .rodata
+string inode_print
+    db  'Block group %u, local index %u', 0x0a
+endstring
 string sector_print
     db  'Sector 0: ', 0x0a
 endstring
@@ -107,6 +128,9 @@ string prompt
     db  'ZerOS > '
 endstring
 
+string command_inode
+    db  'inode'
+endstring
 string command_sector
     db  'sector'
 endstring

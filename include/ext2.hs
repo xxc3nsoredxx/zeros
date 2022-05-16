@@ -6,6 +6,7 @@
 ; See: https://www.nongnu.org/ext2-doc/
 
 extern ext2_info
+extern find_inode
 extern read_superblock
 
 ; The Ext2 superblock

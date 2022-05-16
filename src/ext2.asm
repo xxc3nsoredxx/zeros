@@ -41,6 +41,46 @@ ext2_info:
     pop ebp
     ret
 
+; u32,u32 find_inode (u32 inode)
+; Find the given inode
+; Return:
+;   Block group and local inode index on success
+;   -1,-1 on failure
+find_inode:
+    push ebp
+    mov ebp, esp
+
+    ; Check that the superblock is read, and read it if needed
+    mov eax, [superblock + ext2_sb_t.s_inodes_count]
+    test eax, eax
+    jnz .sb_is_read
+    call read_superblock
+    test eax, eax
+    jnz .error
+
+.sb_is_read:
+    mov eax, [ebp + 8]      ; Check bounds
+    test eax, eax
+    jz  .error              ; No inode 0
+    cmp eax, [superblock + ext2_sb_t.s_inodes_count]
+    jg  .error              ; Past inode max
+
+    ; block group = (inode - 1) / inodes per group
+    ; local index = (inode - 1) % inodes per group
+    mov edx, 0
+    dec eax
+    div DWORD [inodes_per_group]
+
+    jmp .done
+
+.error:
+    mov eax, -1
+    mov edx, -1
+.done:
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 ; u32 read_superblock (void)
 ; Reads the superblock from the current disk.
 ; Return:
