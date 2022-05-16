@@ -151,5 +151,121 @@ endstruc
 %assign EXT2_BZIP2_ALG  0x00000008
 %assign EXT2_LZO_ALG    0x00000010
 
+; An Ext2 inode
+struc ext2_inode_t
+    .i_mode:                ; File mode (type and access rights)
+        resw    1
+    .i_uid:                 ; Owner UID
+        resw    1
+    .i_size:                ; Rev 0:
+        resd    1           ;   signed 32 bit file size in bytes
+                            ; Rev 1+ (only for regular files):
+                            ;   lower 32 bits of file size
+                            ;   upper 32 bits in i_dir_acl
+    .i_atime:               ; UNIX time when the inode was last accessed
+        resd    1
+    .i_ctime:               ; UNIX time when the inode was created
+        resd    1
+    .i_mtime:               ; UNIX time when the inode was last modified
+        resd    1
+    .i_dtime:               ; UNIX time when the indoe was deleted
+        resd    1
+    .i_gid:                 ; GID of groups with access
+        resw    1
+    .i_links_count:         ; Number of (hard) links to this inode
+        resw    1
+    .i_blocks:              ; Total number of 512 byte blocks reserved for
+        resd    1           ; the data (even if unused)
+                            ; max index in i_block array =
+                            ;   i_blocks / (2 << s_log_block_size)
+    .i_flags:               ; Defines behavior for accessing data from the inode
+        resd    1
+    .i_osd1:                ; OS dependant value
+        resd    1
+    .i_block:               ; List of blocks containing data
+        resd    15          ; Index 0-11: direct blocks
+                            ;   - these blocks have the data directly
+                            ; Index 12: indirect block
+                            ;   - this block points to a block containing a list
+                            ;     of additional direct blocks
+                            ; Index 13: double-indirect block
+                            ;   - this block points to a block containing a list
+                            ;     of additional indirect blocks
+                            ; Index 14: triple-indirect block
+                            ;   - this block points to a block containing a list
+                            ;     of additional double-indirect blocks
+                            ; Original Ext2 implementation terminated the array
+                            ; as soon as a 0 was found. Sparse files allow some
+                            ; blocks to be allocated while others aren't, and a
+                            ; 0 is used to indicate no-yet-allocated blocks.
+    .i_generation:          ; File version (used by NFS)
+        resd    1
+    .i_file_acl:            ; Block number with extended attributes
+        resd    1           ; Always 0 in rev 0
+    .i_dir_acl:             ; Always 0 in rev 0, contains high 32 bits of 64 bit
+        resd    1           ; file size for regular fles in rev 1. Always set to
+                            ; 0 by Linux for non-regular files. Could be
+                            ; directory attribute block too, in theory.
+    .i_faddr:               ; Location of the file fragment
+        resd    1           ; Unsupported in Linux and GNU HURD, always set to 0
+                            ; Marked obsolete in Ext4
+    .i_osd2:                ; OS dependant structure (96 bits)
+        resb    12          ; TODO: ignore for now
+endstruc
+
+; File formats
+%assign EXT2_S_IFSOCK   0xc000  ; Socket
+%assign EXT2_S_IFLNK    0xa000  ; Symlink
+%assign EXT2_S_IFREG    0x8000  ; Regular file
+%assign EXT2_S_IFBLK    0x6000  ; Block device
+%assign EXT2_S_IFDIR    0x4000  ; Directory
+%assign EXT2_S_IFCHR    0x2000  ; Character device
+%assign EXT2_S_IFIFO    0x1000  ; FIFO (pipe)
+
+; Override bits
+%assign EXT2_S_ISUID    0x0800  ; Set UID
+%assign EXT2_S_ISGID    0x0400  ; Set GID
+%assign EXT2_S_ISVTX    0x0200  ; Sticky bit
+
+; Access rights
+%assign EXT2_S_IRUSR    0x0100  ; User read
+%assign EXT2_S_IWUSR    0x0080  ; User write
+%assign EXT2_S_IXUSR    0x0040  ; User execute
+%assign EXT2_S_IRGRP    0x0020  ; Group read
+%assign EXT2_S_IWGRP    0x0010  ; Group write
+%assign EXT2_S_IXGRP    0x0008  ; Group execute
+%assign EXT2_S_IROTH    0x0004  ; Other read
+%assign EXT2_S_IWOTH    0x0002  ; Other write
+%assign EXT2_S_IXOTH    0x0001  ; Other execute
+
+; Data access behavior flags
+%assign EXT2_SECRM_FL       0x00000001  ; Secure delete
+%assign EXT2_UNRM_FL        0x00000002  ; Record for undelete
+%assign EXT2_COMPR_FL       0x00000004  ; Compressed file
+%assign EXT2_SYNC_FL        0x00000008  ; Synchronous updates
+%assign EXT2_IMMUTABLE_FL   0x00000010  ; Immutable file
+%assign EXT2_APPEND_FL      0x00000020  ; Append only
+%assign EXT2_NODUMP_FL      0x00000040  ; Don't dump/delete
+%assign EXT2_NOATIME_FL     0x00000080  ; Don't update atime
+; Begin compression behavior flags
+%assign EXT2_DIRTY_FL       0x00000100  ; Dirty (modified)
+%assign EXT2_COMPRBLK_FL    0x00000200  ; Compressed blocks
+%assign EXT2_NOCOMPR_FL     0x00000400  ; Access raw compressed data
+%assign EXT2_ECOMPR_FL      0x00000800  ; Compression error
+; End compression behavior flags
+%assign EXT2_BTREE_FL           0x00001000  ; B-tree format directory
+%assign EXT2_INDEX_FL           0x00001000  ; Hash indexed directory (same?)
+%assign EXT2_IMAGIC_FL          0x00002000  ; AFS directory
+%assign EXT2_JOURNAL_DATA_FL    0x00004000  ; Journal file data
+%assign EXT2_RESERVED_FL        0x80000000  ; Reserved for Ext2 library
+
+; Reserved inodes (rev 0)
+%assign EXT2_BAD_INO            1   ; Bad blocks inode
+%assign EXT2_ROOT_INO           2   ; Root directory inode
+%assign EXT2_ACL_IDX_INO        3   ; ACL index inode (deprecated?)
+%assign EXT2_ACL_DATA_INO       4   ; ACL data inode (deprecated?)
+%assign EXT2_BOOT_LOADER_INFO   5   ; Bootloader inode
+%assign EXT2_UNDEL_DIR_INO      6   ; Undelete directory inode
+
 %endif
 ; vim: filetype=asm:syntax=nasm:
