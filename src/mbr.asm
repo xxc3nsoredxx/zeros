@@ -89,33 +89,6 @@ read_mbr:
     pop ebp
     ret
 
-section .data
+section .bss
 mbr:
-    istruc mbr_t
-        at mbr_t.bootstrap,     times 446   db  0
-        at mbr_t.p1_attr,       db  0
-        at mbr_t.p1_chs_start,  times 3     db 0
-        at mbr_t.p1_type,       db  0
-        at mbr_t.p1_chs_end,    times 3     db 0
-        at mbr_t.p1_lba,        dd  0
-        at mbr_t.p1_sectors,    dd  0
-        at mbr_t.p2_attr,       db  0
-        at mbr_t.p2_chs_start,  times 3     db 0
-        at mbr_t.p2_type,       db  0
-        at mbr_t.p2_chs_end,    times 3     db 0
-        at mbr_t.p2_lba,        dd  0
-        at mbr_t.p2_sectors,    dd  0
-        at mbr_t.p3_attr,       db  0
-        at mbr_t.p3_chs_start,  times 3     db 0
-        at mbr_t.p3_type,       db  0
-        at mbr_t.p3_chs_end,    times 3     db 0
-        at mbr_t.p3_lba,        dd  0
-        at mbr_t.p3_sectors,    dd  0
-        at mbr_t.p4_attr,       db  0
-        at mbr_t.p4_chs_start,  times 3     db 0
-        at mbr_t.p4_type,       db  0
-        at mbr_t.p4_chs_end,    times 3     db 0
-        at mbr_t.p4_lba,        dd  0
-        at mbr_t.p4_sectors,    dd  0
-        at mbr_t.boot_magic,    dw  0
-    iend
+    resb 512
