@@ -44,9 +44,22 @@ kmain:
     push command_inode
     push input_buf
     call streq
+    test eax, eax
     jnz .no_inode
 
-    push DWORD 2
+    cmp BYTE [input_buf + command_inode_len], 0x20  ; Test for space
+    jnz .no_inode
+
+    mov eax, [esp]          ; Top of the stack currently has input length
+    sub eax, command_inode_len + 2  ; Get the length of the (hopefully) number
+                                    ; -2 for ' ' and terminating newline
+    push eax
+    push input_buf + command_inode_len + 1  ; Start of (hopefully) number
+    call stoi
+    cmp edx, 1
+    jz  .no_inode           ; Failed to turn input into number ;(
+
+    push eax
     call find_inode
 
     push edx
@@ -62,6 +75,7 @@ kmain:
     push command_sector
     push input_buf
     call streq
+    test eax, eax
     jnz .no_sector
 
     push DWORD 1

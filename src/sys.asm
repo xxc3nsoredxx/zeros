@@ -117,6 +117,59 @@ clear:
 .blanks:
     dd  0x00200020
 
+; u32,u32 stoi (char *str, u32 len)
+; Convert a string into an int (base 10). Stops parsing after len chars, 10
+; digits, or when the first non-digit char is reached, whichever happens first.
+; TODO: negative numbers
+; Return:
+;   The converted number and 0 on success
+;   0,1 on failure
+stoi:
+    push ebp
+    mov ebp, esp
+    push esi
+
+    mov esi, [ebp + 8]      ; Save the source string
+    cmp DWORD [ebp + 12], 0 ; Error if length 0
+    jz  .error
+
+    mov ecx, 10             ; Use the given length if it's < 10
+    cmp DWORD [ebp + 12], 10
+    cmovl ecx, [ebp + 12]
+
+    mov eax, 0
+.loop:
+    mov edx, 10             ; Shift digits to the left and check for overflow
+    mul edx
+    jo  .error
+
+    mov dl, [esi]
+    cmp dl, 0x30            ; Test for valid chars
+    jl  .error
+    cmp dl, 0x39
+    jg  .error
+
+    sub dl, 0x30            ; Un-ASCII and check for overflow
+    add eax, edx            ; Rest of edx guaranteed zero due to above mul
+    jo  .error
+
+    inc esi                 ; Next char
+    loop .loop
+
+    mov edx, 0
+    jmp .done
+
+.error:
+    mov eax, 0
+    mov edx, 1
+.done:
+    pop esi
+    mov esp, ebp
+    pop ebp
+    ret 8
+.is_neg:
+    dd  0
+
 ; u32 streq (char *str1, char *str2, u32 max_len)
 ; Compare strings str1 and str2 for equality, stopping after max_len bytes have
 ; been checked.

@@ -6,6 +6,7 @@ extern getsn
 
 ; Miscellaneous functions
 extern clear
+extern stoi
 extern streq
 
 ; Output functions
