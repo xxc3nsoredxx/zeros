@@ -7,6 +7,9 @@
 
 extern ext2_info
 extern find_inode
+extern print_inode
+extern read_group_descriptor
+extern read_inode
 extern read_superblock
 
 ; The Ext2 superblock
@@ -153,7 +156,9 @@ endstruc
 %assign EXT2_LZO_ALG    0x00000010
 
 ; An Ext2 block group descriptor
+; The block group descriptor table starts on the block after the superblock
 ; All block ID's are absolute blocks
+; 32 bytes long
 struc ext2_bg_t
     .bg_block_bitmap:       ; Block ID of the first block of the block bitmap
         resd    1

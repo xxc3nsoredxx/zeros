@@ -81,6 +81,301 @@ find_inode:
     pop ebp
     ret 4
 
+; void print_inode (u32 inode)
+; Prints the information from the given inode.
+print_inode:
+    push ebp
+    mov ebp, esp
+    push edi
+
+    push DWORD [ebp + 8]    ; Read the inode
+    call read_inode
+    test eax, eax
+    jnz .error
+
+    mov eax, 0              ; eax is nice to clear since the top half isn't
+                            ; used much, but the bottom half is
+
+    mov ecx, 15             ; Print all direct, indirect, 2x, 3x blocks
+.block_loop:
+    ; The printf call needs them pushed last -> first
+    push DWORD [temp_inode + ext2_inode_t.i_block + ecx*4 - 4]
+    loop .block_loop
+
+    push DWORD [temp_inode + ext2_inode_t.i_flags]
+    push DWORD [temp_inode + ext2_inode_t.i_blocks]
+    mov ax, [temp_inode + ext2_inode_t.i_links_count]
+    push eax
+    mov ax, [temp_inode + ext2_inode_t.i_gid]
+    push eax
+    push DWORD [temp_inode + ext2_inode_t.i_dtime]
+    push DWORD [temp_inode + ext2_inode_t.i_mtime]
+    push DWORD [temp_inode + ext2_inode_t.i_ctime]
+    push DWORD [temp_inode + ext2_inode_t.i_atime]
+    push DWORD [temp_inode + ext2_inode_t.i_size]
+    mov ax, [temp_inode + ext2_inode_t.i_uid]
+    push eax
+
+    ; Figure out the file mode and type
+    mov ecx, 0
+    mov edi, .mode_string
+
+    ; User mode
+    mov cx, [temp_inode + ext2_inode_t.i_mode]
+    test cx, EXT2_S_IRUSR
+    cmovnz ax, [.mode_bits + 2] ; 'r'
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    stosb
+    test cx, EXT2_S_IWUSR
+    cmovnz ax, [.mode_bits + 3] ; 'w'
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    stosb
+    and cx, EXT2_S_ISUID | EXT2_S_IXUSR
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    cmp cx, EXT2_S_ISUID | EXT2_S_IXUSR
+    cmovz ax, [.mode_bits + 5]  ; 's'
+    cmp cx, EXT2_S_ISUID
+    cmovz ax, [.mode_bits + 6]  ; 'S'
+    cmp cx, EXT2_S_IXUSR
+    cmovz ax, [.mode_bits + 4]  ; 'x'
+    stosb
+
+    ; Group mode
+    inc edi
+    mov cx, [temp_inode + ext2_inode_t.i_mode]
+    test cx, EXT2_S_IRGRP
+    cmovnz ax, [.mode_bits + 2] ; 'r'
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    stosb
+    test cx, EXT2_S_IWGRP
+    cmovnz ax, [.mode_bits + 3] ; 'w'
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    stosb
+    and cx, EXT2_S_ISGID | EXT2_S_IXGRP
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    cmp cx, EXT2_S_ISGID | EXT2_S_IXGRP
+    cmovz ax, [.mode_bits + 5]  ; 's'
+    cmp cx, EXT2_S_ISGID
+    cmovz ax, [.mode_bits + 6]  ; 'S'
+    cmp cx, EXT2_S_IXGRP
+    cmovz ax, [.mode_bits + 4]  ; 'x'
+    stosb
+
+    ; Other mode
+    inc edi
+    mov cx, [temp_inode + ext2_inode_t.i_mode]
+    test cx, EXT2_S_IROTH
+    cmovnz ax, [.mode_bits + 2] ; 'r'
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    stosb
+    test cx, EXT2_S_IWOTH
+    cmovnz ax, [.mode_bits + 3] ; 'w'
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    stosb
+    and cx, EXT2_S_ISVTX | EXT2_S_IXOTH
+    cmovz ax, [.mode_bits + 1]  ; '-'
+    cmp cx, EXT2_S_ISVTX | EXT2_S_IXOTH
+    cmovz ax, [.mode_bits + 7]  ; 't'
+    cmp cx, EXT2_S_ISVTX
+    cmovz ax, [.mode_bits + 8]  ; 'T'
+    cmp cx, EXT2_S_IXOTH
+    cmovz ax, [.mode_bits + 4]  ; 'x'
+    stosb
+
+    push DWORD .mode_string_len
+    push .mode_string
+
+    ; Type
+    mov eax, 0
+    mov ax, [temp_inode + ext2_inode_t.i_mode]
+    shr eax, 12             ; Move the most significant nybble to the bottom
+    push DWORD [.type_lengths + eax*4]
+    push DWORD [.type_strings + eax*4]
+
+    push DWORD [ebp + 8]    ; Inode number
+    push DWORD inode_fmt_len
+    push inode_fmt
+    call printf
+
+    jmp .done
+
+.error:
+    push DWORD [ebp + 8]
+    push DWORD invalid_inode_len
+    push invalid_inode
+    call printf
+.done:
+    pop edi
+    mov esp, ebp
+    pop ebp
+    ret 4
+string .mode_string
+    db '--- --- ---'        ; u/g/o rwx (including setuid/setgid/sticky)
+endstring
+.mode_bits:
+    db ' -rwxsStT'          ; Extra space at the start because the smallest unit
+                            ; for CMOVcc is WORD
+.type_strings:
+    dd 0
+    dd fifo_type
+    dd char_type
+    dd 0
+    dd dir_type
+    dd 0
+    dd block_type
+    dd 0
+    dd file_type
+    dd 0
+    dd symlink_type
+    dd 0
+    dd socket_type
+    dd 0
+    dd 0
+    dd 0
+.type_lengths:
+    dd 0
+    dd fifo_type_len
+    dd char_type_len
+    dd 0
+    dd dir_type_len
+    dd 0
+    dd block_type_len
+    dd 0
+    dd file_type_len
+    dd 0
+    dd symlink_type_len
+    dd 0
+    dd socket_type_len
+    dd 0
+    dd 0
+    dd 0
+
+; u32 read_group_descriptor (u32 group)
+; Reads the block group descriptor for the given group
+; Return:
+;   0 on success
+;   1 on failure
+read_group_descriptor:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push esi
+    push edi
+
+    mov edx, 0
+    mov eax, [block_size]   ; Get the block size in sectors
+    mov ecx, 512
+    div ecx
+    add eax, [sb_sector]    ; Get the sector of the next block after the
+    mov ebx, eax            ; superblock (has descriptor table)
+
+    mov eax, [ebp + 8]      ; Find the sector and byte offset of the given
+    mov ecx, 32             ; descriptor in the table
+    mul ecx
+    mov ecx, 512
+    div ecx                 ; eax = sector offset
+                            ; edx = byte offset
+    add eax, ebx            ; eax = absolute sector
+    mov ebx, edx            ; ebx = byte offset
+
+    push DWORD 1            ; Read the sector
+    push eax
+    push temp_sector
+    call read_sector
+    test eax, eax
+    jnz .error
+
+    lea esi, [temp_sector + ebx]    ; Copy the desired group descriptor
+    mov edi, temp_desc
+    mov ecx, 32
+    rep movsb
+
+    mov eax, 0
+    jmp .done
+
+.error:
+    mov eax, 1
+.done:
+    pop edi
+    pop esi
+    pop ebx
+    mov esp, ebp
+    pop ebp
+    ret 4
+
+; u32 read_inode (u32 inode)
+; Reads the given inode
+; Return:
+;   0 on success
+;   1 on failure
+read_inode:
+    push ebp
+    mov ebp, esp
+    push ebx
+    push esi
+    push edi
+
+    push DWORD [ebp + 8]    ; Locate the inode
+    call find_inode
+    cmp eax, -1
+    jz  .error
+
+    mov ebx, edx            ; Save the group-local inode index
+    push eax                ; Read the approriate group descriptor
+    call read_group_descriptor
+    test eax, eax
+    jnz .error
+
+    mov edx, 0
+    mov eax, [block_size]   ; Get the block size in sectors
+    mov ecx, 512
+    div ecx
+    mov edx, 0
+    mul DWORD [temp_desc + ext2_bg_t.bg_inode_table]    ; Get the sector of the
+                                                        ; start of the inode 
+                                                        ; table
+    add eax, DWORD [sb_sector]  ; Offset from the superblock
+    cmp DWORD [block_size], 1024    ; If block size <= 1024, go back 2 sectors
+    jg  .no_extra_offset            ; to account for superblock not being part
+    sub eax, 2                      ; of block 0
+.no_extra_offset:
+    push eax                ; Save start sector
+
+    mov eax, ebx            ; Find the sector and byte offset of the given
+    mov ecx, 128            ; inode in the table (using local index)
+    mul ecx
+    mov ecx, 512
+    div ecx                 ; eax = sector offset
+                            ; edx = byte offset
+    pop ebx                 ; Restore the start sector
+    add eax, ebx            ; eax = absolute sector
+    mov ebx, edx            ; ebx = byte offset
+
+    push DWORD 1            ; Read the sector
+    push eax
+    push temp_sector
+    call read_sector
+    test eax, eax
+    jnz .error
+
+    lea esi, [temp_sector + ebx]    ; Copy the desired inode
+    mov edi, temp_inode
+    mov ecx, 128
+    rep movsb
+
+    mov eax, 0
+    jmp .done
+
+.error:
+    mov eax, 1
+.done:
+    pop edi
+    pop esi
+    pop ebx
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 ; u32 read_superblock (void)
 ; Reads the superblock from the current disk.
 ; Return:
@@ -96,6 +391,7 @@ read_superblock:
     jz  .error
 
     add eax, 2              ; Move to the 3rd sector of the partition
+    mov [sb_sector], eax    ; Save the sector for future
     push DWORD 2
     push eax
     push superblock
@@ -166,8 +462,59 @@ endstring
 string info_failed
     db  'Failed to get Ext2 info!', 0x0a
 endstring
+string inode_fmt
+    db  'Inode %u', 0x0a
+    db  '  Type:   %s', 0x0a
+    db  '  Mode:   %s', 0x0a
+    db  '  UID:    %u', 0x0a
+    db  '  Size:   %u bytes', 0x0a
+    db  '  Atime:  %u', 0x0a
+    db  '  Ctime:  %u', 0x0a
+    db  '  Mtime:  %u', 0x0a
+    db  '  Dtime:  %u', 0x0a
+    db  '  GID:    %u', 0x0a
+    db  '  Links:  %u', 0x0a
+    db  '  Blocks: %u', 0x0a
+    db  '  Flags:  %x', 0x0a
+    db  '  Direct blocks:', 0x0a
+    db  '    %u %u %u %u', 0x0a
+    db  '    %u %u %u %u', 0x0a
+    db  '    %u %u %u %u', 0x0a
+    db  '  Indirect block:', 0x0a
+    db  '    %u', 0x0a
+    db  '  2x indirect block:', 0x0a
+    db  '    %u', 0x0a
+    db  '  3x indirect block:', 0x0a
+    db  '    %u', 0x0a
+endstring
+string fifo_type
+    db  'fifo'
+endstring
+string char_type
+    db  'character device'
+endstring
+string dir_type
+    db  'directory'
+endstring
+string block_type
+    db  'block device'
+endstring
+string file_type
+    db  'file'
+endstring
+string symlink_type
+    db  'symlink'
+endstring
+string socket_type
+    db  'socket'
+endstring
+string invalid_inode
+    db  'Invalid inode: %u', 0x0a
+endstring
 
 section .bss
+sb_sector:                  ; The sector on the disk containing the superblock
+    resd 1
 superblock:                 ; The Ext2 superblock
     resb 1024
 block_size:                 ; Block size, calculated after reading the
@@ -178,3 +525,9 @@ inodes_per_group:           ; Inodes per group, saved after reading the
     resd 1                  ; superblock
 bg_count:                   ; Number of block groups, calculated after reading
     resd 1                  ; the superblock
+temp_desc:                  ; Temporary storage for a block group descriptor
+    resb 32
+temp_inode:                 ; Temporary storage for an inode, currently assumes
+    resb 128                ; they're 128 bytes (and not something weird)
+temp_sector:                ; Temporary storage for a sector
+    resb 512

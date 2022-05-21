@@ -31,7 +31,7 @@ kmain:
     push DWORD [input_len]  ; Get input
     push input_buf
     call getsn
-    push eax                ; Save read count
+    mov [input_read_len], eax   ; Save read count
 
     mov eax, 0x0d           ; Go to new line
     push eax
@@ -50,7 +50,7 @@ kmain:
     cmp BYTE [input_buf + command_inode_len], 0x20  ; Test for space
     jnz .no_inode
 
-    mov eax, [esp]          ; Top of the stack currently has input length
+    mov eax, [input_read_len]
     sub eax, command_inode_len + 2  ; Get the length of the (hopefully) number
                                     ; -2 for ' ' and terminating newline
     push eax
@@ -60,13 +60,7 @@ kmain:
     jz  .no_inode           ; Failed to turn input into number ;(
 
     push eax
-    call find_inode
-
-    push edx
-    push eax
-    push inode_print_len
-    push inode_print
-    call printf
+    call print_inode
 
     jmp .prompt_loop
 
@@ -82,6 +76,7 @@ kmain:
     push DWORD 0
     push sector
     call read_sector
+    test eax, eax
     jnz .no_sector
 
     push DWORD sector_print_len
@@ -120,17 +115,15 @@ kmain:
     jmp .prompt_loop
 
 .no_sector:
-    push input_buf          ; Print input
-    call puts               ; The length is alread at the top of the stack
+    push DWORD [input_read_len] ; Print the input
+    push input_buf
+    call puts
 
     jmp .prompt_loop        ; Loop
 
     ret
 
 section .rodata
-string inode_print
-    db  'Block group %u, local index %u', 0x0a
-endstring
 string sector_print
     db  'Sector 0: ', 0x0a
 endstring
@@ -158,6 +151,8 @@ input_buf:
     resb 100
 input_buf_end:
     resb 1
+input_read_len:
+    resd 1
 
 sector:
     resb 512
