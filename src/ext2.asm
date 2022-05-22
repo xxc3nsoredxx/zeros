@@ -250,6 +250,44 @@ endstring
     dd 0
     dd 0
 
+; u32 read_block (u32 block)
+; Read the given Ext2 block into temporary storage. Assumes blocks are 1024
+; bytes long (for now).
+; Return:
+;   0 on success
+;   1 on failure
+read_block:
+    push ebp
+    mov ebp, esp
+
+    push DWORD 1
+    call get_partition      ; Assume we're the first (and only) partition
+    test eax, eax
+    jz  .error
+
+    mov ecx, [ebp + 8]      ; Convert block into sector offset
+    shl ecx, 1
+    cmp ecx, edx            ; Verify the sector resides in the partition
+    jge .error              ; Multiplying by 2 ensures the sector offset is even
+                            ; and the last even sector offset less than the
+                            ; partition length begins the last block
+
+    add eax, ecx            ; Read the block
+    push DWORD 2
+    push eax
+    push temp_block
+    call read_sector
+    test eax, eax
+    jnz .error
+    jmp .done
+
+.error:
+    mov eax, 1
+.done:
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 ; u32 read_group_descriptor (u32 group)
 ; Reads the block group descriptor for the given group
 ; Return:
@@ -262,32 +300,36 @@ read_group_descriptor:
     push esi
     push edi
 
-    mov edx, 0
-    mov eax, [block_size]   ; Get the block size in sectors
-    mov ecx, 512
+    mov edx, 0              ; Get the number of descriptors per block
+    mov eax, [block_size]
+    mov ecx, ext2_bg_t_size
     div ecx
-    add eax, [sb_sector]    ; Get the sector of the next block after the
-    mov ebx, eax            ; superblock (has descriptor table)
 
-    mov eax, [ebp + 8]      ; Find the sector and byte offset of the given
-    mov ecx, 32             ; descriptor in the table
-    mul ecx
-    mov ecx, 512
-    div ecx                 ; eax = sector offset
-                            ; edx = byte offset
-    add eax, ebx            ; eax = absolute sector
-    mov ebx, edx            ; ebx = byte offset
+    mov edx, 0              ; Find the block containing the descriptor
+    mov ecx, [ebp + 8]
+    xchg eax, ecx
+    div ecx                 ; eax = table-local block offset
+                            ; edx = block-local descriptor offset
+    push edx                ; Save the offset
 
-    push DWORD 1            ; Read the sector
+    mov ebx, eax            ; Adjust the block number to make it absolute. It's
+    mov edx, 0              ; always the block after the superblock, so the one
+    mov eax, 2048           ; that starts 2048 bytes in.
+    div DWORD [block_size]
+    add eax, ebx
+
     push eax
-    push temp_sector
-    call read_sector
+    call read_block
     test eax, eax
     jnz .error
 
-    lea esi, [temp_sector + ebx]    ; Copy the desired group descriptor
+    pop eax                 ; Convert the descriptor offset into byte offset
+    mov ecx, ext2_bg_t_size
+    mul ecx
+
+    lea esi, [temp_block + eax] ; Copy the group descriptor
     mov edi, temp_desc
-    mov ecx, 32
+    mov ecx, ext2_bg_t_size
     rep movsb
 
     mov eax, 0
@@ -326,41 +368,33 @@ read_inode:
     test eax, eax
     jnz .error
 
-    mov edx, 0
-    mov eax, [block_size]   ; Get the block size in sectors
-    mov ecx, 512
+    mov edx, 0              ; Get the number of inodes per block
+    mov eax, [block_size]
+    mov ecx, 0
+    mov cx, [superblock + ext2_sb_t.s_inode_size]
     div ecx
-    mov edx, 0
-    mul DWORD [temp_desc + ext2_bg_t.bg_inode_table]    ; Get the sector of the
-                                                        ; start of the inode 
-                                                        ; table
-    add eax, DWORD [sb_sector]  ; Offset from the superblock
-    cmp DWORD [block_size], 1024    ; If block size <= 1024, go back 2 sectors
-    jg  .no_extra_offset            ; to account for superblock not being part
-    sub eax, 2                      ; of block 0
-.no_extra_offset:
-    push eax                ; Save start sector
 
-    mov eax, ebx            ; Find the sector and byte offset of the given
-    mov ecx, 128            ; inode in the table (using local index)
-    mul ecx
-    mov ecx, 512
-    div ecx                 ; eax = sector offset
-                            ; edx = byte offset
-    pop ebx                 ; Restore the start sector
-    add eax, ebx            ; eax = absolute sector
-    mov ebx, edx            ; ebx = byte offset
+    mov edx, 0              ; Find the block containing the inode
+    xchg eax, ebx
+    div ebx                 ; eax = table-local block offset
+                            ; edx = block-local inode offset
+    add eax, [temp_desc + ext2_bg_t.bg_inode_table] ; Make block number absolute
 
-    push DWORD 1            ; Read the sector
+    push edx                ; Save the offset
     push eax
-    push temp_sector
-    call read_sector
+    call read_block
     test eax, eax
     jnz .error
 
-    lea esi, [temp_sector + ebx]    ; Copy the desired inode
+    pop eax                 ; Convert the inode offset into byte offset
+    mov ecx, 0
+    mov cx, [superblock + ext2_sb_t.s_inode_size]
+    mul ecx
+
+    lea esi, [temp_block + eax] ; Copy the inode
     mov edi, temp_inode
-    mov ecx, 128
+    mov ecx, 0
+    mov cx, [superblock + ext2_sb_t.s_inode_size]
     rep movsb
 
     mov eax, 0
@@ -529,5 +563,5 @@ temp_desc:                  ; Temporary storage for a block group descriptor
     resb 32
 temp_inode:                 ; Temporary storage for an inode, currently assumes
     resb 128                ; they're 128 bytes (and not something weird)
-temp_sector:                ; Temporary storage for a sector
-    resb 512
+temp_block:                 ; Temporary storage for an Ext2 block, currently
+    resb 1024               ; assumes 1024 byte blocks

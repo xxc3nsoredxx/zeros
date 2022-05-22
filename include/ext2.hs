@@ -8,6 +8,7 @@
 extern ext2_info
 extern find_inode
 extern print_inode
+extern read_block
 extern read_group_descriptor
 extern read_inode
 extern read_superblock
