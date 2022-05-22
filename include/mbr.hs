@@ -2,6 +2,7 @@
 %define MBR_HS_20220509_214705
 
 extern find_partition
+extern get_partition
 extern read_mbr
 
 struc mbr_t
