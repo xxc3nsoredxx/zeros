@@ -21,7 +21,7 @@ kmain:
     ;push DWORD TS_PANIC
     ;call exception_test
 
-    call ext2_info
+    ;call ext2_info
 
 .prompt_loop:
     push DWORD prompt_len   ; Show prompt
@@ -40,6 +40,30 @@ kmain:
     push eax
     call putch
 
+    push DWORD command_cat_len  ; Test for the "cat" command
+    push command_cat
+    push input_buf
+    call streq
+    test eax, eax
+    jnz .no_cat
+
+    cmp BYTE [input_buf + command_cat_len], 0x20    ; Test for space
+    jnz .no_cat
+
+    mov eax, [input_read_len]
+    sub eax, command_cat_len + 2    ; Get the length of the number
+    push eax
+    push input_buf + command_cat_len + 1    ; Start of number
+    call stoi
+    cmp edx, 1
+    jz  .no_cat
+
+    push eax
+    call print_file
+
+    jmp .prompt_loop
+
+.no_cat:
     push DWORD command_inode_len   ; Test for the "inode" command
     push command_inode
     push input_buf
@@ -135,6 +159,9 @@ string prompt
     db  'ZerOS > '
 endstring
 
+string command_cat
+    db  'cat'
+endstring
 string command_inode
     db  'inode'
 endstring

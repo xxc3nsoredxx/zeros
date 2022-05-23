@@ -81,6 +81,83 @@ find_inode:
     pop ebp
     ret 4
 
+; u32 print_file (u32 inode)
+; Prints the contents of the file referenced by the given inode.
+; TODO: indirect blocks
+; Return:
+;   0 on success
+;   1 on failure
+;   2 on deleted file
+print_file:
+    push ebp
+    mov ebp, esp
+    push ebx
+
+    push DWORD [ebp + 8]    ; Read the inode
+    call read_inode
+    test eax, eax
+    jnz .error
+
+    mov ax, [temp_inode + ext2_inode_t.i_mode]  ; Test for non-file
+    and ax, EXT2_S_IFREG
+    jz  .error
+    cmp DWORD [temp_inode + ext2_inode_t.i_ctime], 0    ; Test for nonexistent
+    jz  .error                                          ; file (TODO: bitmap)
+    cmp DWORD [temp_inode + ext2_inode_t.i_dtime], 0    ; Test for deleted file
+    jnz .deleted
+    cmp DWORD [temp_inode + ext2_inode_t.i_size], 0 ; Test for 0 length file
+    jz  .done
+
+    mov ebx, 0              ; Track which block we're currently on
+    mov ecx, [temp_inode + ext2_inode_t.i_size] ; Track how much left to print
+.block_loop:                ; Print the file
+    ; Test if no more blocks (hit a block number 0)
+    cmp DWORD [temp_inode + ext2_inode_t.i_block + ebx*4], 0
+    jz  .block_loop_done
+
+    push ecx
+    push DWORD [temp_inode + ext2_inode_t.i_block + ebx*4]
+    call read_block
+    test eax, eax
+    jnz .error
+    pop ecx
+
+    mov edx, [block_size]   ; Print an entire block if >1024 bytes left
+    cmp ecx, [block_size]
+    cmovl edx, ecx
+    sub ecx, edx            ; Remove that from the amount left
+
+    push ecx
+    push edx                ; Finally print lmao
+    push temp_block
+    call puts
+    pop ecx
+
+    inc ebx
+    test ecx, ecx
+    jnz .block_loop
+
+.block_loop_done:
+    mov eax, 0
+    jmp .done
+
+.error:
+    push DWORD print_bad_file_len
+    push print_bad_file
+    call puts
+    mov eax, 1
+    jmp .done
+.deleted:
+    push DWORD print_deleted_file_len
+    push print_deleted_file
+    call puts
+    mov eax, 2
+.done:
+    pop ebx
+    mov esp, ebp
+    pop ebp
+    ret 4
+
 ; void print_inode (u32 inode)
 ; Prints the information from the given inode.
 print_inode:
@@ -495,6 +572,12 @@ string ext2_info_fmt
 endstring
 string info_failed
     db  'Failed to get Ext2 info!', 0x0a
+endstring
+string print_bad_file
+    db  'Error: bad file', 0x0a
+endstring
+string print_deleted_file
+    db  'Error: deleted file', 0x0a
 endstring
 string inode_fmt
     db  'Inode %u', 0x0a
