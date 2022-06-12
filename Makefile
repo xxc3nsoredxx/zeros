@@ -25,7 +25,7 @@ relink: $(OBJS)
 
 install: all
 	cp $(BIN)/kernel.bin $(MOUNT)/boot/
-	sync
+	sync $(MOUNT)
 
 run:
 	$(QEMU) $(QFLAGS)
