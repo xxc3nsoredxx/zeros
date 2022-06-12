@@ -117,6 +117,33 @@ clear:
 .blanks:
     dd  0x00200020
 
+; u32 is_path (char *str, u32 len)
+; Checks if the string is a valid path. Currently only verifes that has nonzero
+; length and starts with '/'.
+; Return:
+;   0 on success
+;   1 on failure
+is_path:
+    push ebp
+    mov ebp, esp
+
+    cmp DWORD [ebp + 12], 0 ; Check for nonzero length
+    jz  .error
+
+    mov eax, [ebp + 8]  ; Check that is starts with '/'
+    cmp BYTE [eax], '/'
+    jnz .error
+
+    mov eax, 0
+    jmp .done
+
+.error:
+    mov eax, 1
+.done:
+    mov esp, ebp
+    pop ebp
+    ret 8
+
 ; u32,u32 stoi (char *str, u32 len)
 ; Convert a string into an int (base 10). Stops parsing after len chars, 10
 ; digits, or when the first non-digit char is reached, whichever happens first.

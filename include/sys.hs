@@ -6,6 +6,7 @@ extern getsn
 
 ; Miscellaneous functions
 extern clear
+extern is_path
 extern stoi
 extern streq
 

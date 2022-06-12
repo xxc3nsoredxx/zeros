@@ -89,6 +89,32 @@ kmain:
     jmp .prompt_loop
 
 .no_inode:
+    push DWORD command_ls_len   ; Test for the "ls" command
+    push command_ls
+    push input_buf
+    call streq
+    test eax, eax
+    jnz .no_ls
+
+    cmp BYTE [input_buf + command_ls_len], 0x20 ; Test for space
+    jnz .no_ls
+
+    ; Save a pointer to the path and the path length
+    lea eax, [input_buf + command_ls_len + 1]
+    mov [input_path], eax
+    mov eax, [input_read_len]
+    sub eax, command_ls_len + 2
+    mov [input_path_len], eax
+
+    push DWORD [input_path_len] ; Verify the path is somewhat valid
+    push DWORD [input_path]
+    call is_path
+    test eax, eax
+    jnz .no_ls
+
+    jmp .prompt_loop
+
+.no_ls:
     push DWORD command_sector_len   ; Test for the "sector" command
     push command_sector
     push input_buf
@@ -165,6 +191,9 @@ endstring
 string command_inode
     db  'inode'
 endstring
+string command_ls
+    db  'ls'
+endstring
 string command_sector
     db  'sector'
 endstring
@@ -179,6 +208,11 @@ input_buf:
 input_buf_end:
     resb 1
 input_read_len:
+    resd 1
+
+input_path:                 ; Stores a pointer to the path part of the "ls"
+    resd 1
+input_path_len:             ; Length of the path
     resd 1
 
 sector:
